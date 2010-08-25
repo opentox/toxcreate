@@ -93,7 +93,7 @@ class Parser
 
 	def validate(smiles, act, row)
 		compound = OpenTox::Compound.new(:smiles => smiles)
-		if compound.inchi == ""
+		if compound.nil? or compound.inchi.nil? or compound.inchi == ""
 			@smiles_errors << "Row #{row}: " + [smiles,act].join(", ") 
 			return false
 		end

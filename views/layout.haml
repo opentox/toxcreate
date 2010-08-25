@@ -9,7 +9,9 @@
     %link{:rel=>'stylesheet', :href=>'stylesheets/style.css', :type => "text/css"}      
 
   %body
-    .logo= image_tag "/ToxCreate_rgb_72.png", :alt => 'ToxCreate', :align => "right"
+    .logo
+      = image_tag "/ToxCreate_rgb_72.png", :alt => 'ToxCreate', :align => 'right'
+      %br Create and evaluate models to predict toxicity
     .index
       %ul
         %li{:class => ("selected" if /\/create/ =~ request.path )}

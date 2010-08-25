@@ -11,6 +11,18 @@ class ToxCreateModel
 	property :validation_report_uri, String, :length => 255
 	property :warnings, Text, :length => 2**32-1 
 	property :nr_compounds, Integer
+	property :nr_predictions, Integer
+	property :true_positives, Integer
+	property :false_positives, Integer
+	property :true_negatives, Integer
+	property :false_negatives, Integer
+	property :correct_predictions, Integer
+	property :weighted_area_under_roc, Float
+	property :sensitivity, Float
+	property :specificity, Float
+	property :r_square, Float
+	property :root_mean_squared_error, Float
+	property :mean_absolute_error, Float
 	property :type, String
 	property :created_at, DateTime
 
@@ -62,6 +74,7 @@ class ToxCreateModel
 		end
 	end
 
+=begin
 	def classification_validation
 		begin
 			uri = File.join(@validation_uri, 'statistics')
@@ -83,17 +96,21 @@ class ToxCreateModel
 					n += fp
 				end
 			end
-			{
-				:n => n,
-				:tp => tp,
-				:fp => fp,
-				:tn => tn,
-				:fn => fn, 
-				:correct_predictions => sprintf("%.2f", 100*(tp+tn).to_f/n),
-				:weighted_area_under_roc => sprintf("%.3f", v[:classification_statistics][:weighted_area_under_roc].to_f),
-				:sensitivity => sprintf("%.3f", tp.to_f/(tp+fn)),
-				:specificity => sprintf("%.3f", tn.to_f/(tn+fp))
-			}
+      @nr_predictions = n
+      @true_positives = tp
+      @false_positives = fp
+      @true_negatives = tn
+      @false_negatives = fn
+      @correct_predictions = 100*(tp+tn).to_f/n
+      @weighted_area_under_roc = v[:classification_statistics][:weighted_area_under_roc].to_f
+      @sensitivity = tp.to_f/(tp+fn)
+      @specificity = tn.to_f/(tn+fp)
+      save
+				#:correct_predictions => sprintf("%.2f", 100*(tp+tn).to_f/n),
+				#:weighted_area_under_roc => sprintf("%.3f", v[:classification_statistics][:weighted_area_under_roc].to_f),
+				#:sensitivity => sprintf("%.3f", tp.to_f/(tp+fn)),
+				#:specificity => sprintf("%.3f", tn.to_f/(tn+fp))
+			#}
 		rescue
 			"Service offline"
 		end
@@ -104,10 +121,16 @@ class ToxCreateModel
 			uri = File.join(@validation_uri, 'statistics')
 			yaml = RestClient.get(uri).body
 			v = YAML.load(yaml)
+      @nr_predictions = v[:num_instances] - v[:num_unpredicted]
+      @r_square = v[:regression_statistics][:r_square]
+      @root_mean_squared_error = v[:regression_statistics][:root_mean_squared_error]
+      @mean_absolute_error = v[:regression_statistics][:mean_absolute_error]
+      save
 		rescue
 			"Service offline"
 		end
 	end
+=end
 
   def process
 
@@ -129,6 +152,42 @@ class ToxCreateModel
 				LOGGER.debug "Validation URI: #{@validation_uri}"
 				update :validation_report_task_uri => RestClient.post(File.join(@@config[:services]["opentox-validation"],"/report/crossvalidation"), :validation_uris => @validation_uri).body
 				LOGGER.debug "Validation Report Task URI: #{@validation_report_task_uri}"
+        uri = File.join(@validation_uri, 'statistics')
+        yaml = RestClient.get(uri).body
+        v = YAML.load(yaml)
+        case type
+        when "classification"
+          tp=0; tn=0; fp=0; fn=0; n=0
+          v[:classification_statistics][:confusion_matrix][:confusion_matrix_cell].each do |cell|
+            if cell[:confusion_matrix_predicted] == "true" and cell[:confusion_matrix_actual] == "true"
+              tp = cell[:confusion_matrix_value]
+              n += tp
+            elsif cell[:confusion_matrix_predicted] == "false" and cell[:confusion_matrix_actual] == "false"
+              tn = cell[:confusion_matrix_value]
+              n += tn
+            elsif cell[:confusion_matrix_predicted] == "false" and cell[:confusion_matrix_actual] == "true"
+              fn = cell[:confusion_matrix_value]
+              n += fn
+            elsif cell[:confusion_matrix_predicted] == "true" and cell[:confusion_matrix_actual] == "false"
+              fp = cell[:confusion_matrix_value]
+              n += fp
+            end
+          end
+          update :nr_predictions => n
+          update :true_positives => tp
+          update :false_positives => fp
+          update :true_negatives => tn
+          update :false_negatives => fn
+          update :correct_predictions => 100*(tp+tn).to_f/n
+          update :weighted_area_under_roc => v[:classification_statistics][:weighted_area_under_roc].to_f
+          update :sensitivity => tp.to_f/(tp+fn)
+          update :specificity => tn.to_f/(tn+fp)
+        when "regression"
+          update :nr_predictions => v[:num_instances] - v[:num_unpredicted]
+          update :r_square => v[:regression_statistics][:r_square]
+          update :root_mean_squared_error => v[:regression_statistics][:root_mean_squared_error]
+          update :mean_absolute_error => v[:regression_statistics][:mean_absolute_error]
+        end
 			rescue
 				LOGGER.warn "Cannot create Validation Report Task #{@validation_report_task_uri} for  Validation URI #{@validation_uri} from Task #{@validation_task_uri}"
 			end

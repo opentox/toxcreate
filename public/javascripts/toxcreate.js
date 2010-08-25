@@ -80,7 +80,7 @@ $(function() {
   checkValidation = function() {
     var reload_id = "";
     $("input.model_validation_report").each(function(){
-        if($(this).val() != "Completed") {
+        if(!$(this).val().match(/Completed|Error/)) {
           reload_id = this.id.replace("model_validation_report_","");
           if(/^\d+$/.test(reload_id)) loadModel(reload_id, 'validation');
         };

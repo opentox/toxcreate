@@ -1,7 +1,7 @@
 ['rubygems', "haml", "sass", "rack-flash"].each do |lib|
 	require lib
 end
-gem "opentox-ruby-api-wrapper", "= 1.6.3"
+gem "opentox-ruby-api-wrapper", "= 1.6.4"
 require 'opentox-ruby-api-wrapper'
 gem 'sinatra-static-assets'
 require 'sinatra/static_assets'
@@ -49,21 +49,22 @@ end
 get '/model/:id/:view/?' do
   response['Content-Type'] = 'text/plain'
 	model = ToxCreateModel.get(params[:id])
-  model.process
-	model.save
 
   begin
+    model.process
+    model.save
     case params[:view]
       when "model"
 		    haml :model, :locals=>{:model=>model}, :layout => false
 		  when /validation/
-				if model.type == "classification"
-					haml :classification_validation, :locals=>{:model=>model}, :layout => false
-				elsif model.type == "regression"
-					haml :regression_validation, :locals=>{:model=>model}, :layout => false
-				else
-					return "Unknown model type '#{model.type}'"
-				end
+        haml :validation, :locals=>{:model=>model}, :layout => false
+				#if model.type == "classification"
+					#haml :classification_validation, :locals=>{:model=>model}, :layout => false
+				#elsif model.type == "regression"
+					#haml :regression_validation, :locals=>{:model=>model}, :layout => false
+				#else
+					#return "Unknown model type '#{model.type}'"
+				#end
 		  else
 				return "unable to render model: id #{params[:id]}, view #{params[:view]}"
 		end
