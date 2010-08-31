@@ -19,14 +19,9 @@ body
   a:hover
     color: black
 
-  .logo
-    float: right
-    br
-      clear: both
-      //border-right: 90px
-    img
-      margin: 0
-      padding: 0
+  .headline
+    .logo
+      float: right
 
   .index
     clear: both
@@ -90,7 +85,7 @@ body
           font-weight: bold
           color: $fg_color
         label
-          width: 30em
+          width: 25em
           display: block
           float: left
         br
@@ -138,9 +133,11 @@ body
         #prev
           @extend a
           display: inline
+          cursor: pointer
         #next
           @extend a
           display: inline
+          cursor: pointer
         
       dt
         font-weight: bold
@@ -152,8 +149,7 @@ body
         border-collapse: collapse
         margin: 0
         tbody
-          height: 10em
-          overflow: scroll
+          //height: 10em
         th
           text-align: center
           border: 1px solid
