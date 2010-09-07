@@ -17,7 +17,7 @@
         %dd= model.nr_predictions
         - case model.type
         - when "classification"
-          = haml :classification_validation, :locals=>{:model=>model}, :layout => false     
+          = haml :classification_validation, :locals=>{:model=>model}, :layout => false if model.correct_predictions
         - when "regression"
           = haml :regression_validation, :locals=>{:model=>model}, :layout => false     
     - else
