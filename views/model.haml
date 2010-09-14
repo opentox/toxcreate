@@ -42,20 +42,22 @@
         %dd
           %a{:href => "#{model.training_dataset}.xls"} Excel sheet
           ,
-          %a{:href => "#{model.training_dataset}.rdf"} RDF/XML
-          %em (experts) ,
+          -#%a{:href => "#{model.training_dataset}.rdf"} RDF/XML
+          -#%em (experts) ,
           %a{:href => "#{model.training_dataset}.yaml"} YAML
           %em  (experts)
         %dt Feature dataset:
         %dd
-          %a{:href => "#{model.feature_dataset}.rdf"} RDF/XML
-          ,
+          -#%a{:href => "#{model.feature_dataset}.rdf"} RDF/XML
+          -#,
           %a{:href => "#{model.feature_dataset}.yaml"} YAML
           %em  (experts, dataset too large for Excel)
         %dt Model:
         %dd
-          %a{:href => "#{model.uri}.rdf"} RDF/XML
-          ,
+          -#%a{:href => "#{model.uri}.rdf"} RDF/XML
+          -#,
+          - unless model.validation_qmrf_uri.nil?
+            %a{:href => File.join(model.validation_qmrf_uri,"editor")} QMRF Editor, 
           %a{:href => "#{model.uri}.yaml"} YAML
           %em  (experts, models cannot be represented in Excel)
         = haml :validation, :locals=>{:model=>model}, :layout => false     

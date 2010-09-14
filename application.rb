@@ -58,13 +58,6 @@ get '/model/:id/:view/?' do
 		    haml :model, :locals=>{:model=>model}, :layout => false
 		  when /validation/
         haml :validation, :locals=>{:model=>model}, :layout => false
-				#if model.type == "classification"
-					#haml :classification_validation, :locals=>{:model=>model}, :layout => false
-				#elsif model.type == "regression"
-					#haml :regression_validation, :locals=>{:model=>model}, :layout => false
-				#else
-					#return "Unknown model type '#{model.type}'"
-				#end
 		  else
 				return "unable to render model: id #{params[:id]}, view #{params[:view]}"
 		end
