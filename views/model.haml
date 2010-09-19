@@ -53,7 +53,8 @@
           %a{:href => "#{model.feature_dataset}.yaml"} YAML
           %em  (experts, dataset too large for Excel)
         %dt Model:
-        %dd
+        %dd{:id => "model_qmrf_#{model.id}"}
+          %input{ :id => "model_validation_qmrf_#{model.id}", :type => "hidden", :value => "#{model.validation_qmrf_status}", :class => "model_validation_qmrf" }
           -#%a{:href => "#{model.uri}.rdf"} RDF/XML
           -#,
           - unless model.validation_qmrf_uri.nil?

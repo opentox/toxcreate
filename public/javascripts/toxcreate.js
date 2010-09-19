@@ -85,6 +85,12 @@ $(function() {
           if(/^\d+$/.test(reload_id)) loadModel(reload_id, 'validation');
         };
     });
+    $("input.model_validation_qmrf").each(function(){
+        if(!$(this).val().match(/Completed|Error/)) {
+          reload_id = this.id.replace("model_validation_qmrf_","");
+          if(/^\d+$/.test(reload_id)) loadModel(reload_id, 'model');
+        };
+    });
     var validationCheck = setTimeout('checkValidation()',15000);
   }
 });
