@@ -7,9 +7,9 @@
 
     #prev= "prev" unless @page.to_i == 0
 
-    = "(#{5*@page+1}-#{5*@page+5}/#{@neighbors.size})" 
+    = "(#{5*@page+1}-#{5*@page+5}/#{@prediction.neighbors(@compound).size})" 
 
-    #next= "next" unless 5*@page.to_i+5 >= @neighbors.size
+    #next= "next" unless 5*@page.to_i+5 >= @prediction.neighbors(@compound).size
 
     :javascript
       $("#prev").click(function() {

@@ -9,15 +9,14 @@
 - first = 5*page
 - last = first+4
 - neighbor_id = 0
-- neighbors.sort{|a,b| b.last[:similarity] <=> a.last[:similarity]}[first..last].each do |uri,data|
+-# LOGGER.debug neighbors.to_yaml
+- neighbors.sort{|a,b| b[OT.similarity] <=> a[OT.similarity]}[first..last].each do |neighbor|
   - neighbor_id += 1
-  - compound = OpenTox::Compound.new(:uri => uri)
+  - compound = OpenTox::Compound.new(neighbor[OT.compound])
   %tr
-    %td.image= compound_image(compound,data[:features])
-    %td
-      - data[:activities].each do |act|
-        = activity_markup(act)
-    %td= sprintf('%.03g', data[:similarity])
+    %td.image= compound_image(compound,@prediction.descriptors(compound))
+    %td= activity_markup(neighbor[OT.activity])
+    %td= sprintf('%.03g', neighbor[OT.similarity])
     %td
       %ul
         %li
@@ -41,5 +40,5 @@
   %tr{:id => "fragments#{neighbor_id}", :style => "display: none;" }
     %td{:colspan => '4'}
       = hide_link("#fragments#{neighbor_id}")
-      = haml :feature_table, :locals => {:features => data[:features]}, :layout => false
+      = haml :feature_table, :locals => {:features => sort(@prediction.descriptors(compound))}, :layout => false
 

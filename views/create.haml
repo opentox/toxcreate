@@ -18,13 +18,13 @@
     = link_to "instructions for creating training datasets", '/help'
     before submitting.
 
-  %form{ :action => url_for('/upload'), :method => "post", :enctype => "multipart/form-data" }
+  %form{ :action => url_for('/models'), :method => "post", :enctype => "multipart/form-data" }
     %fieldset
-      %label{:for => 'endpoint'} 1. Enter #{toggle_link("#endpoint_description","endpoint")} name and #{toggle_link("#unit","unit")} (for #{toggle_link("#regression","regression")}):
-      %input{:type => 'text', :name => 'endpoint', :id => 'endpoint', :size => '50'}
-      %br
+      -#%label{:for => 'endpoint'} 1. Enter #{toggle_link("#endpoint_description","endpoint")} name and #{toggle_link("#unit","unit")} (for #{toggle_link("#regression","regression")}):
+      -#%input{:type => 'text', :name => 'endpoint', :id => 'endpoint', :size => '50'}
+      -#%br
       %label{:for => 'file'}
-        2. Upload training data in
+        Select training dataset in 
         = link_to "Excel", '/help'
         or
         = link_to "CSV", '/help'

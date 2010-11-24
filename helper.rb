@@ -12,8 +12,16 @@ helpers do
     haml :js_link, :locals => {:name => name, :destination => destination, :method => "toggle"}, :layout => false
   end
 
-  def compound_image(compound,features)
-    haml :compound_image, :locals => {:compound => compound, :features => features}, :layout => false
+  def sort(descriptors)
+    features = {:activating => [], :deactivating => []}
+
+    descriptors.each { |d| LOGGER.debug d.inspect; features[d[OT.effect].to_sym] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} }
+    LOGGER.debug features.to_yaml
+    features
+  end
+
+  def compound_image(compound,descriptors)
+    haml :compound_image, :locals => {:compound => compound, :features => sort(descriptors)}, :layout => false
   end
   
   def activity_markup(activity)

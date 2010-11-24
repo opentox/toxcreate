@@ -7,8 +7,9 @@
         = @identifier
     %tr
       %td
-        %img{:src => @compound.image_uri, :alt => @compound.smiles}
+        %img{:src => @compound.to_image_uri, :alt => @compound.to_smiles}
       - @predictions.each do |p|
+        - LOGGER.debug p.to_yaml
         %td
           %b
             = p[:title] + ":"
@@ -25,8 +26,8 @@
                 });
               )
 
-          - elsif p[:prediction].to_s.match(/not available/)
-            = p[:prediction]
+          - elsif p[:error]
+            %br= p[:error]
           - else
             = activity_markup(p[:prediction])
             - if p[:confidence]

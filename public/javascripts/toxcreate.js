@@ -85,7 +85,8 @@ $(function() {
           if(/^\d+$/.test(reload_id)) loadModel(reload_id, 'validation');
         };
     });
-    var validationCheck = setTimeout('checkValidation()',15000);
+    //var validationCheck = setTimeout('checkValidation()',15000);
+    var validationCheck = setTimeout('checkValidation()',5000);
   }
 });
 
