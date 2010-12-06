@@ -1,0 +1,41 @@
+.input
+
+  %p
+    This service creates 
+    %ul
+      %li
+        = toggle_link("#lazar_description","lazar")
+        %em= toggle_link("#classification","classification")
+        models and
+      %li
+        = toggle_link("#lazar_description","lazar")
+        %em= toggle_link("#regression","regression")
+        models 
+    from your uploaded datasets. Further modelling algorithms will be added in future versions.
+ 
+  %p
+    Please read the 
+    = link_to "instructions for creating training datasets", '/help'
+    before submitting.
+
+  %form{ :action => url_for('/models'), :method => "post", :enctype => "multipart/form-data" }
+    %fieldset
+      -#%label{:for => 'endpoint'} 1. Enter #{toggle_link("#endpoint_description","endpoint")} name and #{toggle_link("#unit","unit")} (for #{toggle_link("#regression","regression")}):
+      -#%input{:type => 'text', :name => 'endpoint', :id => 'endpoint', :size => '50'}
+      -#%br
+      %label{:for => 'file'}
+        Select training dataset in 
+        = link_to "Excel", '/help'
+        or
+        = link_to "CSV", '/help'
+        format:
+      %input{:type => 'file', :name => 'file', :id => 'file', :size => '41'}
+    %input{ :type => "submit", :value => "Create model"}
+    = link_to "Cancel", '/create'
+
+  -# explanations
+  = haml :lazar_description, :layout => false
+  = haml :classification, :layout => false
+  = haml :regression, :layout => false
+  = haml :endpoint, :layout => false
+  = haml :unit, :layout => false

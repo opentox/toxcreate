@@ -1,0 +1,44 @@
+%tr
+  %th
+    Neighbors 
+    = neighbors_navigation
+  %th= toggle_link("#training_data","Measured activity")
+  %th= toggle_link("#similarity","Similarity")
+  %th Supporting information
+
+- first = 5*page
+- last = first+4
+- neighbor_id = 0
+-# LOGGER.debug neighbors.to_yaml
+- neighbors.sort{|a,b| b[OT.similarity] <=> a[OT.similarity]}[first..last].each do |neighbor|
+  - neighbor_id += 1
+  - compound = OpenTox::Compound.new(neighbor[OT.compound])
+  %tr
+    %td.image= compound_image(compound,@prediction.descriptors(compound))
+    %td= activity_markup(neighbor[OT.activity])
+    %td= sprintf('%.03g', neighbor[OT.similarity])
+    %td
+      %ul
+        %li
+          %a{:href => "#prediction", :id => "show_names#{neighbor_id}"} Names and synonyms
+          :javascript
+            $("a#show_names#{neighbor_id}").click(function () {
+              $("#compound_names#{neighbor_id}").load("#{File.join("compound",compound.inchi)}");  
+              $("#names#{neighbor_id}").toggle();  
+            });
+        %li= toggle_link("#fragments#{neighbor_id}","Significant fragments")
+        -#%li Ambit data
+        -# %li
+          %a{:href => "http://www.ncbi.nlm.nih.gov/sites/entrez?cmd=PureSearch&db=pccompound&term=#{URI.encode('"'+compound.inchi+'"[InChI]')}"}  PubChem data
+          (external)
+        -# %li ToxNet data
+
+  %tr{:id => "names#{neighbor_id}", :style => "display: none;" }
+    %td{:colspan => '4'}
+      = hide_link("#names#{neighbor_id}")
+      %div{:id => "compound_names#{neighbor_id}"}
+  %tr{:id => "fragments#{neighbor_id}", :style => "display: none;" }
+    %td{:colspan => '4'}
+      = hide_link("#fragments#{neighbor_id}")
+      = haml :feature_table, :locals => {:features => sort(@prediction.descriptors(compound))}, :layout => false
+
