@@ -11,7 +11,8 @@
   %body
     .logo
       = image_tag "/ToxCreate_rgb_72.png", :alt => 'ToxCreate', :align => 'right'
-      %br Create and evaluate models to predict toxicity
+      %br
+      Create and evaluate models to predict toxicity
     .index
       %ul
         %li{:class => ("selected" if /\/create/ =~ request.path )}
@@ -20,6 +21,9 @@
           = link_to "Inspect", "/models"
         %li{:class => ("selected" if /predict|lazar/ =~ request.path )}
           = link_to "Predict", "/predict"
+        - if AA_SERVER
+          %li{:class => ("selected" if /login/ =~ request.path )}
+            = link_to "Login", "/login"
         %li{:class => ("selected" if /help/ =~ request.path )}
           = link_to "Help", "/help"
 

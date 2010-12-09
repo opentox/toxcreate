@@ -10,8 +10,9 @@ require File.join(File.dirname(__FILE__),'model.rb')
 require File.join(File.dirname(__FILE__),'helper.rb')
 #require File.join(File.dirname(__FILE__),'parser.rb')
 
+use Rack::Session::Cookie, :expire_after => 28800, 
+                           :secret => "ui6vaiNi-change_me"
 use Rack::Flash
-set :sessions, true
 
 helpers do 
 
@@ -27,8 +28,21 @@ helpers do
 
 end
 
+before do
+  unless env['REQUEST_METHOD'] == "GET" or ( env['REQUEST_URI'] =~ /\/login$/ and env['REQUEST_METHOD'] == "POST" ) or !AA_SERVER
+    if !logged_in()
+      flash[:notice] = "You have to login first to do this."
+      redirect url_for('/login')
+    end
+  end
+end
+
 get '/?' do
   redirect url_for('/create')
+end
+
+get '/login' do
+  haml :login
 end
 
 get '/models/?' do
@@ -93,18 +107,25 @@ get %r{/compound/(.*)} do |inchi|
 end
 
 post '/models' do # create a new model
-
   unless params[:file] and params[:file][:tempfile] #params[:endpoint] and 
     flash[:notice] = "Please upload a Excel or CSV file."
     redirect url_for('/create')
   end
 
-  @model = ToxCreateModel.create(:name => params[:file][:filename].sub(/\..*$/,""))
+  unless logged_in()
+    logout
+    flash[:notice] = "Please login to create a new model."
+    redirect url_for('/create')
+  end
+
+  @model = ToxCreateModel.create(:name => params[:file][:filename].sub(/\..*$/,""), :token_id => session[:token_id])
+  @model.update :web_uri => url_for("/model/#{@model.id}", :full)
+  @model.save
   task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do
 
     @model.update :status => "Uploading and saving dataset"
     begin
-      @dataset = OpenTox::Dataset.create
+      @dataset = OpenTox::Dataset.create(nil, session[:token_id])
       # check format by extension - not all browsers provide correct content-type]) 
       case File.extname(params[:file][:filename])
       when ".csv"
@@ -119,6 +140,7 @@ post '/models' do # create a new model
     rescue => e
       error "Dataset creation failed with #{e.message}"
     end
+    @dataset.token_id = session[:token_id] if session[:token_id]
     @dataset.save
     if @dataset.compounds.size < 10
       error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/excel_format"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."
@@ -136,7 +158,7 @@ post '/models' do # create a new model
 
     @model.update :status => "Creating prediction model"
     begin
-      lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri)
+      lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :token_id => session[:token_id])
     rescue => e
       error "Model creation failed with '#{e.message}'. Please check if the input file is in a valid #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} format."
     end
@@ -159,6 +181,7 @@ post '/models' do # create a new model
         validation = OpenTox::Validation.create_crossvalidation(
           :algorithm_uri => OpenTox::Algorithm::Lazar.uri,
           :dataset_uri => lazar.parameter("dataset_uri"),
+          :token_id => session[:token_id],
           :prediction_feature => lazar.parameter("prediction_feature"),
           :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}"
         )
@@ -231,7 +254,7 @@ post '/predict/?' do # post chemical name to model
     title = nil
     db_activities = []
     lazar = OpenTox::Model::Lazar.new model.uri
-    prediction_dataset_uri = lazar.run(:compound_uri => @compound.uri)
+    prediction_dataset_uri = lazar.run(:compound_uri => @compound.uri, :token_id => session[:token_id])
     prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri)
     if prediction_dataset.metadata[OT.hasSource].match(/dataset/)
       @predictions << {
@@ -298,7 +321,7 @@ post "/lazar/?" do # get detailed prediction
   @page = params[:page].to_i if params[:page]
   @model_uri = params[:model_uri]
   lazar = OpenTox::Model::Lazar.new @model_uri
-  prediction_dataset_uri = lazar.run(:compound_uri => params[:compound_uri])
+  prediction_dataset_uri = lazar.run(:compound_uri => params[:compound_uri], :token_id => params[:token_id])
   @prediction = OpenTox::LazarPrediction.find(prediction_dataset_uri)
   @compound = OpenTox::Compound.new(params[:compound_uri])
   #@title = prediction.metadata[DC.title]
@@ -328,12 +351,42 @@ post "/lazar/?" do # get detailed prediction
   haml :lazar
 end
 
+post '/login' do
+  if session[:token_id] != nil
+    flash[:notice] = "You are already logged in as user: #{session[:username]}. Please log out first."
+    redirect url_for('/login')
+  end
+  if params[:username] == '' || params[:password] == ''
+    flash[:notice] = "Please enter username and password."
+    redirect url_for('/login')
+  end
+  if login(params[:username], params[:password])
+    flash[:notice] = "Login successful."
+  else
+    flash[:notice] = "Login failed."
+  end
+  haml :login
+end
+
+post '/logout' do
+  logout
+  redirect url_for('/login')
+end
+
 delete '/model/:id/?' do
   model = ToxCreateModel.get(params[:id])
   begin
-    RestClient.delete model.uri if model.uri
+    RestClient.delete(model.uri, :token_id => session[:token_id]) if model.uri
     RestClient.delete model.task_uri if model.task_uri
     model.destroy
+    unless ToxCreateModel.get(params[:id])
+      begin
+        aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, session[:token_id])
+        LOGGER.debug "Policy deleted for Dataset URI: #{uri} with result: #{aa}"
+      rescue
+        LOGGER.warn "Policy delete error for Dataset URI: #{uri}"
+      end
+    end
     flash[:notice] = "#{model.name} model deleted."
   rescue
     flash[:notice] = "#{model.name} model delete error."

@@ -2,6 +2,7 @@
   %input{:type => :hidden, :name => :compound_uri, :value => compound_uri}
   %input{:type => :hidden, :name => :model_uri, :value => model_uri}
   %input{:type => :hidden, :name => :highlight, :value => smarts}
+  %input{:type => :hidden, :name => :token_id, :value => session[:token_id]}
   - if smarts.nil?
     %input{ :type => "submit", :value => "Reset"}
   - else

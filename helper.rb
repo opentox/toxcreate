@@ -1,5 +1,41 @@
 helpers do
 
+  def login(username, password)
+    session[:token_id] = OpenTox::Authorization.authenticate(username, password)
+    LOGGER.debug "ToxCreate login user #{username} with token_id: " + session[:token_id].to_s
+    if session[:token_id] != nil
+      session[:username] = username
+      return true
+    else
+      session[:username] = ""
+      return false
+    end
+  end
+
+  def logout
+    if session[:token_id] != nil
+      session[:token_id] = nil
+      session[:username] = ""
+      return true
+    end
+    return false
+  end
+
+  def logged_in()
+    return true if !AA_SERVER
+    if session[:token_id] != nil
+      return OpenTox::Authorization.is_token_valid(session[:token_id])
+    end
+    return false
+  end
+
+  def is_authorized(uri, action)
+    if session[:token_id] != nil
+      return OpenTox::Authorization.authorize(uri, action, session[:token_id])
+    end
+    return false
+  end
+
   def hide_link(destination)
     @link_id = 0 unless @link_id
     @link_id += 1

@@ -29,6 +29,7 @@
           %input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id} 
           %br
 
+      %input{:type => 'hidden', :name => 'token_id', :id => 'token_id', :value => session[:token_id]}
       %input{ :type => "submit", :value => "Predict", :onclick => "getsmiles();"}
       = link_to 'Cancel', '/predict' 
 

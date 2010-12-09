@@ -30,6 +30,7 @@
         = link_to "CSV", '/help'
         format:
       %input{:type => 'file', :name => 'file', :id => 'file', :size => '41'}
+      %input{:type => 'hidden', :name => 'token_id', :id => 'token_id', :value => session[:token_id]}
     %input{ :type => "submit", :value => "Create model"}
     = link_to "Cancel", '/create'
 

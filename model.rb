@@ -38,6 +38,11 @@ class ToxCreateModel
 	property :root_mean_squared_error, Float
 	property :mean_absolute_error, Float
 
+  property :token_id, String, :length => 255
+  property :web_uri, String, :length => 255
+
+  after :save, :check_policy
+
 =begin
 def status
 		#begin
@@ -180,6 +185,11 @@ def status
 
   end
 =end
+
+  private
+  def check_policy
+    OpenTox::Authorization.check_policy(web_uri, token_id)
+  end
 
 end
 
