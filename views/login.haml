@@ -1,0 +1,32 @@
+.input
+
+  %p
+    Please login as guest or user. You can create a user account at 
+    = link_to "www.opentox.org/join_form .", "http://www.opentox.org/join_form"
+  - if !logged_in()
+    %form{ :action => url_for('/login'), :method => "post" }
+      %fieldset
+        %label{:for => 'username'} Username:
+        %input{:type => 'text', :name => 'username', :id => 'username', :size => '50'}
+        %br
+        %label{:for => 'password'} Password:
+        %input{:type => 'password', :name => 'password', :id => 'password', :size => '50'}
+      %input{ :type => "submit", :value => "Login"}
+      = link_to "Cancel", '/login'
+    %br
+    or login with guest-account:    
+    %form{ :action => url_for('/login'), :method => "post" }
+      %input{:type => 'hidden', :name => 'username', :id => 'username', :value => "guest"}
+      %input{:type => 'hidden', :name => 'password', :id => 'password', :value => "guest"}
+      %input{ :type => "submit", :value => "Login as guest"}
+  - else
+    %form{ :action => url_for('/logout'), :method => "post" }
+      %p 
+        You are logged in as user: 
+        %b= session[:username]
+        - if LOGGER.level == Logger::DEBUG        
+          %br
+          = session[:token_id]
+      %input{ :type => "submit", :value => "Logout"} 
+      = link_to "Cancel", '/login'
+      
