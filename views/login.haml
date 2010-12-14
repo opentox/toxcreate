@@ -26,7 +26,7 @@
         %b= session[:username]
         - if LOGGER.level == Logger::DEBUG        
           %br
-          = session[:token_id]
+          = session[:subjectid]
       %input{ :type => "submit", :value => "Logout"} 
       = link_to "Cancel", '/login'
       

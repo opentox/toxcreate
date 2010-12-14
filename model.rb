@@ -40,8 +40,8 @@ class ToxCreateModel
 
   property :web_uri, String, :length => 255
 
-  attr_accessor :token_id
-  @token_id = nil
+  attr_accessor :subjectid
+  @subjectid = nil
 
   after :save, :check_policy
 
@@ -190,7 +190,7 @@ def status
 
   private
   def check_policy
-    OpenTox::Authorization.check_policy(web_uri, token_id)
+    OpenTox::Authorization.check_policy(web_uri, subjectid)
   end
 
 end

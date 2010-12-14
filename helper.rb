@@ -1,9 +1,9 @@
 helpers do
 
   def login(username, password)
-    session[:token_id] = OpenTox::Authorization.authenticate(username, password)
-    LOGGER.debug "ToxCreate login user #{username} with token_id: " + session[:token_id].to_s
-    if session[:token_id] != nil
+    session[:subjectid] = OpenTox::Authorization.authenticate(username, password)
+    LOGGER.debug "ToxCreate login user #{username} with subjectid: " + session[:subjectid].to_s
+    if session[:subjectid] != nil
       session[:username] = username
       return true
     else
@@ -13,8 +13,8 @@ helpers do
   end
 
   def logout
-    if session[:token_id] != nil
-      session[:token_id] = nil
+    if session[:subjectid] != nil
+      session[:subjectid] = nil
       session[:username] = ""
       return true
     end
@@ -23,15 +23,15 @@ helpers do
 
   def logged_in()
     return true if !AA_SERVER
-    if session[:token_id] != nil
-      return OpenTox::Authorization.is_token_valid(session[:token_id])
+    if session[:subjectid] != nil
+      return OpenTox::Authorization.is_token_valid(session[:subjectid])
     end
     return false
   end
 
   def is_authorized(uri, action)
-    if session[:token_id] != nil
-      return OpenTox::Authorization.authorize(uri, action, session[:token_id])
+    if session[:subjectid] != nil
+      return OpenTox::Authorization.authorize(uri, action, session[:subjectid])
     end
     return false
   end
