@@ -140,8 +140,8 @@ post '/models' do # create a new model
     rescue => e
       error "Dataset creation failed with #{e.message}"
     end
-    @dataset.token_id = session[:token_id] if session[:token_id]
-    @dataset.save
+    token_id = session[:token_id] if session[:token_id]
+    @dataset.save(token_id)
     if @dataset.compounds.size < 10
       error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/excel_format"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."
     end

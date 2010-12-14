@@ -38,8 +38,10 @@ class ToxCreateModel
 	property :root_mean_squared_error, Float
 	property :mean_absolute_error, Float
 
-  property :token_id, String, :length => 255
   property :web_uri, String, :length => 255
+
+  attr_accessor :token_id
+  @token_id = nil
 
   after :save, :check_policy
 
