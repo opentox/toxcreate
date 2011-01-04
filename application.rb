@@ -47,8 +47,9 @@ end
 
 get '/models/?' do
   @models = ToxCreateModel.all(:order => [ :created_at.desc ])
+  subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
   #@models.each { |model| model.process }
-  haml :models
+  haml :models, :locals=>{:models=>@models,:subjectstring => subjectstring}
 end
 
 get '/model/:id/status/?' do
@@ -64,15 +65,15 @@ end
 get '/model/:id/:view/?' do
   response['Content-Type'] = 'text/plain'
   model = ToxCreateModel.get(params[:id])
-
+  subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
   begin
     #model.process
     #model.save
     case params[:view]
       when "model"
-        haml :model, :locals=>{:model=>model}, :layout => false
+        haml :model, :locals=>{:model=>model,:subjectstring => subjectstring}, :layout => false
       when /validation/
-        haml :validation, :locals=>{:model=>model}, :layout => false
+        haml :validation, :locals=>{:model=>model,:subjectstring => subjectstring}, :layout => false
       else
         return "unable to render model: id #{params[:id]}, view #{params[:view]}"
     end
@@ -117,30 +118,29 @@ post '/models' do # create a new model
     flash[:notice] = "Please login to create a new model."
     redirect url_for('/create')
   end
-
-  @model = ToxCreateModel.create(:name => params[:file][:filename].sub(/\..*$/,""), :subjectid => session[:subjectid])
+  subjectid = session[:subjectid] ? session[:subjectid] : nil
+  @model = ToxCreateModel.create(:name => params[:file][:filename].sub(/\..*$/,""), :subjectid => subjectid)
   @model.update :web_uri => url_for("/model/#{@model.id}", :full)
   @model.save
   task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do
 
     @model.update :status => "Uploading and saving dataset"
     begin
-      @dataset = OpenTox::Dataset.create(nil, session[:subjectid])
+      @dataset = OpenTox::Dataset.create(nil, subjectid)
       # check format by extension - not all browsers provide correct content-type]) 
       case File.extname(params[:file][:filename])
       when ".csv"
         csv = params[:file][:tempfile].read
         LOGGER.debug csv
-        @dataset.load_csv(csv)
+        @dataset.load_csv(csv, subjectid)
       when ".xls", ".xlsx"
-        @dataset.load_spreadsheet(Excel.new params[:file][:tempfile].path)
+        @dataset.load_spreadsheet(Excel.new params[:file][:tempfile].path, subjectid)
       else
         error "#{params[:file][:filename]} has a unsupported file type."
       end
     rescue => e
       error "Dataset creation failed with #{e.message}"
     end
-    subjectid = session[:subjectid] if session[:subjectid]
     @dataset.save(subjectid)
     if @dataset.compounds.size < 10
       error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/excel_format"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."
@@ -158,7 +158,7 @@ post '/models' do # create a new model
 
     @model.update :status => "Creating prediction model"
     begin
-      lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :subjectid => session[:subjectid])
+      lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :subjectid => subjectid)
     rescue => e
       error "Model creation failed with '#{e.message}'. Please check if the input file is in a valid #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} format."
     end
@@ -181,7 +181,7 @@ post '/models' do # create a new model
         validation = OpenTox::Validation.create_crossvalidation(
           :algorithm_uri => OpenTox::Algorithm::Lazar.uri,
           :dataset_uri => lazar.parameter("dataset_uri"),
-          :subjectid => session[:subjectid],
+          :subjectid => subjectid,
           :prediction_feature => lazar.parameter("prediction_feature"),
           :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}"
         )
@@ -255,7 +255,7 @@ post '/predict/?' do # post chemical name to model
     db_activities = []
     lazar = OpenTox::Model::Lazar.new model.uri
     prediction_dataset_uri = lazar.run(:compound_uri => @compound.uri, :subjectid => session[:subjectid])
-    prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri)
+    prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri, session[:subjectid])
     if prediction_dataset.metadata[OT.hasSource].match(/dataset/)
       @predictions << {
         :title => model.name,
@@ -322,7 +322,7 @@ post "/lazar/?" do # get detailed prediction
   @model_uri = params[:model_uri]
   lazar = OpenTox::Model::Lazar.new @model_uri
   prediction_dataset_uri = lazar.run(:compound_uri => params[:compound_uri], :subjectid => params[:subjectid])
-  @prediction = OpenTox::LazarPrediction.find(prediction_dataset_uri)
+  @prediction = OpenTox::LazarPrediction.find(prediction_dataset_uri, session[:subjectid])
   @compound = OpenTox::Compound.new(params[:compound_uri])
   #@title = prediction.metadata[DC.title]
   # TODO dataset activity

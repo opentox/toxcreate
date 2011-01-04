@@ -18,4 +18,4 @@
 = haml :regression, :layout => false
 
 - @models.each do |model|
-  = haml :model, :locals=>{:model=>model}, :layout => false 
+  = haml :model, :locals=>{:model=>model,:subjectstring=>subjectstring}, :layout => false 

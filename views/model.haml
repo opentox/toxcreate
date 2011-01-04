@@ -41,20 +41,20 @@
       - if model.training_dataset
         %dt Training dataset:
         %dd
-          %a{:href => "#{model.training_dataset}.xls"} Excel sheet
+          %a{:href => "#{model.training_dataset}.xls#{subjectstring}"} Excel sheet
           ,
           -#%a{:href => "#{model.training_dataset}.rdf"} RDF/XML
           -#%em (experts) ,
-          %a{:href => "#{model.training_dataset}.yaml"} YAML
+          %a{:href => "#{model.training_dataset}.yaml#{subjectstring}" } YAML
           %em  (experts)
       - if model.feature_dataset
         %dt Feature dataset:
         %dd
           -#%a{:href => "#{model.feature_dataset}.rdf"} RDF/XML
           -#,
-          %a{:href => "#{model.feature_dataset}.xls"} Excel sheet
+          %a{:href => "#{model.feature_dataset}.xls#{subjectstring}"} Excel sheet
           ,
-          %a{:href => "#{model.feature_dataset}.yaml"} YAML
+          %a{:href => "#{model.feature_dataset}.yaml#{subjectstring}"} YAML
           %em  (experts)
       - if model.uri
         %dt Model:
@@ -63,6 +63,6 @@
           -#,
           - if model.validation_qmrf_uri
             %a{:href => File.join(model.validation_qmrf_uri,"editor")} QMRF Editor, 
-          %a{:href => "#{model.uri}.yaml"} YAML
+          %a{:href => "#{model.uri}.yaml#{subjectstring}"} YAML
           %em  (experts, models cannot be represented in Excel)
       = haml :validation, :locals=>{:model=>model}, :layout => false     
