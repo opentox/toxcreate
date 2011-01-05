@@ -3,6 +3,7 @@
   %form{:name => "nav", :action => url_for('/lazar#prediction'), :method => "post", :enctype => "multipart/form-data", :id => "nav"}
     %input{:type => :hidden, :name => :compound_uri, :value => @compound.uri}
     %input{:type => :hidden, :name => :model_uri, :value => @model_uri}
+    %input{:type => :hidden, :name => :subjectid, :value => session[:subjectid]}    
     %input{:type => :hidden, :name => :page, :id => "page"}
 
     #prev= "prev" unless @page.to_i == 0
