@@ -14,9 +14,13 @@
       %dd
         %span{:id => "model_#{model.id}_status", :class => model.status}
           = haml :model_status, :locals=>{:model=>model}, :layout => false
-        - if is_authorized(model.web_uri, "DELETE")   
+        - if is_authorized(model.web_uri, "DELETE")
           (
-          %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete'} delete
+          %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete'} 
+            - if model.status == "Completed" 
+              delete
+            - else
+              stop 
           )
       %dt Started:
       %dd= model.created_at.strftime("%m/%d/%Y - %I:%M:%S%p")

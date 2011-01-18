@@ -14,19 +14,19 @@ $(function() {
     });
   };
 
-  checkStati = function(stati) {
-    stati = stati.split(", ")
+  checkStati = function(stati, subjectstr) {
+    stati = stati.split(", ");
     $("body")
     var newstati = new Array;
     $.each(stati, function(){
-      if(checkStatus(this) > 0) newstati.push(this);
+      if(checkStatus(this, subjectstr) > 0) newstati.push(this);
     });  
-    if (newstati.length > 0) var statusCheck = setTimeout('checkStati("' + newstati.join(", ") + '")',10000);
+    if (newstati.length > 0) var statusCheck = setTimeout('checkStati("' + newstati.join(", ") + '", "' + subjectstr + '")',10000);
   };
   
-  checkStatus = function(id) {
+  checkStatus = function(id, subjectstr) {
     if(id == "") return -1; 
-    var opts = {method: 'get', action: 'model/' + id + '/status', id: id};
+    var opts = {method: 'get', action: 'model/' + id + '/status' + subjectstr, id: id};
     var status_changed = $.ajax({
       type: opts.method,
       url: opts.action,
@@ -36,7 +36,7 @@ $(function() {
         '_method': 'get'
       },
       success: function(data) {
-        var erg = data.search(/Running/);
+        var erg = data.search(/Running|Creating|Upload|Validating/);
         status_changed = false;
         if(erg < 0) status_changed = true;        
         $("span#model_" + id + "_status").animate({"opacity": "0.1"},1000);

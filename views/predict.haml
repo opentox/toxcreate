@@ -26,7 +26,7 @@
         - @models.each do |model|
           %label{:for => model.id}
             = model.name
-          %input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id, :disabled => !is_authorized(model.uri, "POST")} 
+          %input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id} 
           %br
 
       %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}

@@ -26,6 +26,25 @@ helpers do
     redirect url_for('/create')
   end
 
+  private 
+  def delete_model(model, subjectid=nil)
+    begin RestClient.put(File.join(model.task_uri, 'Cancelled'),subjectid) if model.task_uri rescue LOGGER.warn "Can not cancel task #{model.task_uri}" end
+    delete_dependent(model.uri, subjectid) if model.uri
+    delete_dependent(model.validation_uri, subjectid) if model.validation_uri
+    delete_dependent(model.validation_report_uri, subjectid) if model.validation_report_uri
+    delete_dependent(model.validation_qmrf_uri, subjectid) if model.validation_qmrf_uri
+    delete_dependent(model.training_dataset, subjectid) if model.training_dataset
+    delete_dependent(model.feature_dataset, subjectid) if model.feature_dataset
+  end
+
+  def delete_dependent(uri, subjectid=nil)
+    begin
+      RestClient.delete(uri, :subjectid => subjectid) if subjectid
+      RestClient.delete(uri) if !subjectid
+    rescue
+      LOGGER.warn "Can not delete uri: #{uri}"
+    end
+  end
 end
 
 before do
@@ -234,6 +253,7 @@ post '/models' do # create a new model
 end
 
 post '/predict/?' do # post chemical name to model
+  subjectid = session[:subjectid] ? session[:subjectid] : nil
   @identifier = params[:identifier]
   unless params[:selection] and params[:identifier] != ''
     flash[:notice] = "Please enter a compound identifier and select an endpoint from the list."
@@ -376,8 +396,8 @@ end
 delete '/model/:id/?' do
   model = ToxCreateModel.get(params[:id])
   begin
-    RestClient.delete(model.uri, :subjectid => session[:subjectid]) if model.uri
-    RestClient.delete model.task_uri if model.task_uri
+
+    delete_model(model, session[:subjectid])   
     model.destroy
     unless ToxCreateModel.get(params[:id])
       begin
