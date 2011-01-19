@@ -14,6 +14,10 @@ $(function() {
     });
   };
 
+  trim = function() {
+    return this.replace(/^\s+|\s+$/g, '');
+  }
+
   checkStati = function(stati, subjectstr) {
     stati = stati.split(", ");
     $("body")
@@ -36,15 +40,15 @@ $(function() {
         '_method': 'get'
       },
       success: function(data) {
-        var erg = data.search(/Running|Creating|Upload|Validating/);
-        status_changed = false;
-        if(erg < 0) status_changed = true;        
-        $("span#model_" + id + "_status").animate({"opacity": "0.1"},1000);
+        var status_before = "";
+        if ($("span#model_" + id + "_status").html()) status_before = $("span#model_" + id + "_status").html().trim();
+        var status_after  = data.trim();
+        $("span#model_" + id + "_status").animate({"opacity": "0.2"},1000);
         $("span#model_" + id + "_status").animate({"opacity": "1"},1000);
-        if( status_changed ) {
+        if( status_before != status_after) {
           $("span#model_" + id + "_status").html(data);        
           loadModel(id, 'model');
-          id = -1;
+          if (status_after == "Completed") id = -1;
         }        
       },
       error: function(data) {
@@ -100,7 +104,8 @@ jQuery.fn.deleteModel = function(type, options) {
   var opts = $.extend(defaults, options);
   this.bind(opts.trigger_on, function() {
     if(confirm(opts.confirm_message)) {
-      $(opts.elem).fadeTo("slow",0.5);
+      $("div#model_" + opts.id).fadeTo("slow",0.5);
+      $("span#model_" + opts.id + "_status").html("Deleting");
       $.ajax({
          type: opts.method,
          url:  opts.action,
@@ -109,9 +114,10 @@ jQuery.fn.deleteModel = function(type, options) {
            '_method': 'delete'
          },
          success: function(data) {         
-           $(opts.elem).fadeTo("slow",0).slideUp("slow").remove();
+           $("div#model_" + opts.id).fadeTo("slow",0).slideUp("slow").remove();
          },
          error: function(data) {
+           $("span#model_" + opts.id + "_status").html("Delete Error");
            //alert("model delete error!");
          }
        });

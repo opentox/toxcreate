@@ -1,5 +1,5 @@
 - uri = url_for("/model/#{model.id}", :full)
-- js = "$('#delete_#{model.id}').deleteModel('DELETE', {elem: '#model_#{model.id}'});\n  " + "$('#show_model_#{model.id}_warnings').toggleWarnings('#{model.id}');"
+- js = "$('#delete_#{model.id}').deleteModel('DELETE', {id: '#{model.id}'});\n  " + "$('#show_model_#{model.id}_warnings').toggleWarnings('#{model.id}');"
 :javascript
   $(function() {
     #{js}
@@ -12,7 +12,7 @@
     %dl
       %dt Status:
       %dd
-        %span{:id => "model_#{model.id}_status", :class => model.status}
+        %span{:id => "model_#{model.id}_status", :class => "model_status"}
           = haml :model_status, :locals=>{:model=>model}, :layout => false
         - if is_authorized(model.web_uri, "DELETE")
           (
