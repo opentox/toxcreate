@@ -41,7 +41,8 @@ $(function() {
       },
       success: function(data) {
         var status_before = "";
-        if ($("span#model_" + id + "_status") !== null) status_before = $("span#model_" + id + "_status").html().trim();
+        if ($("span#model_" + id + "_status") != null) status_before = $("span#model_" + id + "_status").html().trim();
+        if (status_before == "Deleting") return -1;         
         var status_after  = data.trim();
         $("span#model_" + id + "_status").animate({"opacity": "0.2"},1000);
         $("span#model_" + id + "_status").animate({"opacity": "1"},1000);
