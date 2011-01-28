@@ -19,18 +19,15 @@
     before submitting.
 
   %form{ :action => url_for('/models'), :method => "post", :enctype => "multipart/form-data" }
+    %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
     %fieldset
-      -#%label{:for => 'endpoint'} 1. Enter #{toggle_link("#endpoint_description","endpoint")} name and #{toggle_link("#unit","unit")} (for #{toggle_link("#regression","regression")}):
-      -#%input{:type => 'text', :name => 'endpoint', :id => 'endpoint', :size => '50'}
-      -#%br
       %label{:for => 'file'}
-        Select training dataset in 
+        Select training data in
         = link_to "Excel", '/help'
         or
         = link_to "CSV", '/help'
         format:
       %input{:type => 'file', :name => 'file', :id => 'file', :size => '41'}
-      %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
     %input{ :type => "submit", :value => "Create model"}
     = link_to "Cancel", '/create'
 
@@ -40,3 +37,14 @@
   = haml :regression, :layout => false
   = haml :endpoint, :layout => false
   = haml :unit, :layout => false
+
+  .login_notice
+     
+    - if  session[:username] == "guest"
+      You are currently logged in as 
+      %b guest
+      and your models can be modified or deleted by other guests. Please
+      = link_to "log in", "/login"
+      with your
+      %a{:href => "www.opentox.org"} OpenTox
+      account to control your model permissions.
