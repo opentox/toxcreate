@@ -1,6 +1,7 @@
 helpers do
 
   def login(username, password)
+    logout
     session[:subjectid] = OpenTox::Authorization.authenticate(username, password)
     LOGGER.debug "ToxCreate login user #{username} with subjectid: " + session[:subjectid].to_s
     if session[:subjectid] != nil

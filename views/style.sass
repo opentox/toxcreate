@@ -4,7 +4,7 @@ $fg_color: #424345
 $ot_purple: #5d308a
 $body_color: white
 $text_color: black
-$notice_border: black
+$notice_border: red
 
 body
   min-width: 30em
@@ -34,13 +34,10 @@ body
       margin: 0
       padding: 2px
       display: inline
-      border-right: 1px solid
-        color: $body_color
-      border-top: 1px solid
-        color: $body_color
+      border-right: 1px solid $body_color
+      border-bottom: 1px solid $body_color
       background-color: $fg_color
-      padding-left: 0.5em
-      padding-right: 0.5em
+      padding: 0.2em 0.5em
       font-weight: bold
       a
         text-decoration: none
@@ -50,48 +47,55 @@ body
     li.selected
       font-weight: bold
       background-color: $bg_color
-      border: 1px solid
-        color: $fg_color
-      border-bottom: 1px solid
-        color: $bg_color
+      border-bottom: 1px solid $bg_color
       a
         color: $text_color
 
   .content
+    clear: both
     background-color: $bg_color
     height: 100%
     padding: 1em
-    border: 1px solid
-      color: $fg_color
+    border-top: 1px solid $body_color
     h2
       margin: 20px 3px 2px 3px
     .notice
-      padding: 1em
+      //clear: both
+      //margin-top: 1em
+      padding: 0.5em 1em 
       background-color: $body_color
       border: 1px solid
       border-color: $notice_border
+    .login_info
+      text-align: right
+      font-size: small
+    .login_notice
+      //clear: both
+      font-size: small
+      background-color: $bg_color
+      padding: 1em 0em
+      //font-style: italic
     .input
+      //clear: both
       text-align: left
       form
         padding: 1em
         background-color: $bg_color2
-        border: 1px solid
-          color: $fg_color
         fieldset
-          margin: 0
+          //margin: 0
           padding: 0
+          padding-right: 1em
           border: 0
         legend
           font-weight: bold
           color: $fg_color
         label
-          width: 28em
-          display: block
-          float: left
+          //width: 28em
+          //display: block
+          //float: left
         br
-          clear: both
+          //clear: both
     .code
-      border: 1px solid black
       padding: 1%
       background-color: white
       table
@@ -182,9 +186,9 @@ body
           //overflow-y: scroll;
 
   .model
-    padding: 0em 1em
+    padding: 0.5em 1em
     background-color: $bg_color2
-    border: 1px solid
+    border: 0
     margin-top: 0.6em
     dl
       dt

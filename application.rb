@@ -48,12 +48,13 @@ helpers do
 end
 
 before do
-  unless env['REQUEST_METHOD'] == "GET" or ( env['REQUEST_URI'] =~ /\/login$/ and env['REQUEST_METHOD'] == "POST" ) or !AA_SERVER
-    if !logged_in()
-      flash[:notice] = "You have to login first to do this."
-      redirect url_for('/login')
+  #unless env['REQUEST_METHOD'] == "GET" or ( env['REQUEST_URI'] =~ /\/login$/ and env['REQUEST_METHOD'] == "POST" ) or !AA_SERVER
+    if !logged_in and !( env['REQUEST_URI'] =~ /\/login$/ and env['REQUEST_METHOD'] == "POST" ) #or !AA_SERVER
+      login("guest","guest")
+      #flash[:notice] = "You have to login first to do this."
+      #redirect url_for('/login')
     end
-  end
+  #end
 end
 
 get '/?' do
@@ -404,20 +405,24 @@ post "/lazar/?" do # get detailed prediction
 end
 
 post '/login' do
+=begin
   if session[:subjectid] != nil
     flash[:notice] = "You are already logged in as user: #{session[:username]}. Please log out first."
     redirect url_for('/login')
   end
+=end
   if params[:username] == '' || params[:password] == ''
     flash[:notice] = "Please enter username and password."
     redirect url_for('/login')
   end
   if login(params[:username], params[:password])
-    flash[:notice] = "Login successful."
+    flash[:notice] = "Welcome #{session[:username]}!"
+    redirect url_for('/create')
+    #haml :create
   else
-    flash[:notice] = "Login failed."
+    flash[:notice] = "Login failed. Please try again."
+    haml :login
   end
-  haml :login
 end
 
 post '/logout' do
