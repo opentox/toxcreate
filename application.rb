@@ -81,6 +81,38 @@ get '/model/:id/status/?' do
   end
 end
 
+get '/model/:id/name/?' do
+  response['Content-Type'] = 'text/plain'
+  model = ToxCreateModel.get(params[:id])
+  begin
+    case params[:mode]
+      when 'edit'
+        haml :model_name_edit, :locals=>{:model=>model}, :layout => false
+      when 'show'
+        haml :model_name, :locals=>{:model=>model}, :layout => false
+      else
+        params.inspect
+      end
+  rescue
+    return "unavailable"
+  end
+end
+
+put '/model/:id/?' do
+  response['Content-Type'] = 'text/plain'
+  model = ToxCreateModel.get(params[:id])
+  begin
+    if params[:name] && model.name != params[:name]
+      model.name = params[:name]
+      model.save
+    end
+    redirect url_for("/model/#{model.id}/name?mode=show")
+  rescue
+    return "unavailable"
+  end
+end
+
+
 get '/model/:id/:view/?' do
   response['Content-Type'] = 'text/plain'
   model = ToxCreateModel.get(params[:id])

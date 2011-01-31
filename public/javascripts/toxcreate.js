@@ -95,6 +95,63 @@ $(function() {
   }
 });
 
+jQuery.fn.editModel = function(type, options) {
+  var defaults = {
+    method: 'get',
+    action: this.attr('href'),
+    trigger_on: 'click'
+  };
+  var opts = $.extend(defaults, options);
+  this.bind(opts.trigger_on, function() {  
+    $.ajax({
+         type: opts.method,
+         url:  opts.action,
+         dataType: 'html',
+         data: {
+           '_method': 'get'
+         },
+         success: function(data) {         
+           $("div#model_" + opts.id + "_name").html(data);
+           $("input#model_" + opts.id + "_name").focus();
+         },
+         error: function(data) {
+           alert("model edit error!");
+         }
+       });
+    return false;
+  });
+};
+
+jQuery.fn.saveModel = function(type, options) {
+  var defaults = {
+    method: 'put',
+    action: 'model/' + options.id,
+    trigger_on: 'click'
+  };
+  var opts = $.extend(defaults, options);
+  
+  this.bind(opts.trigger_on, function() {  
+    var name =  $("input#model_" + opts.id + "_name").val();  
+    $.ajax({
+         type: opts.method,
+         url:  opts.action,
+         dataType: 'html',
+         data: {
+           '_method': 'put',
+           'name': name
+         },
+         success: function(data) {         
+           $("div#model_" + opts.id + "_name").html(data);
+         },
+         error: function(data) {
+           alert("model save error!");
+         }
+       });
+    return false;
+  });
+};
+
+
 jQuery.fn.deleteModel = function(type, options) {
   var defaults = {
     method: 'post',

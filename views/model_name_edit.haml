@@ -1,0 +1,14 @@
+- js = "$('#cancel_#{model.id}').editModel('GET', {id: '#{model.id}', mode: 'show'});\n  "
+- js = "$('#save_#{model.id}').saveModel('POST', {id: '#{model.id}', mode: 'show'});\n  "
+:javascript
+  $(function() {
+    #{js}
+  });
+%form{:name => "form", :action => url_for("/model/#{model.id}"), :method => "post", :enctype => "multipart/form-data" }
+  %input{:type => 'text', :name => 'name', :id => "model_#{model.id}_name", :class => 'input_model_name', :size => '40', :value => model.name}
+  %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
+  %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
+  %input{ :type => "submit", :value => "Save", :id => "save_#{model.id}", :class => "edit_button"}
+  %span{:class => "edit_button"}      
+    %a{:href => url_for("/model/#{model.id}/name?mode=show"), :id => "cancel_#{model.id}"} Cancel
+

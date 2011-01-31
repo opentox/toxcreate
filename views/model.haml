@@ -1,13 +1,13 @@
 - uri = url_for("/model/#{model.id}", :full)
-- js = "$('#delete_#{model.id}').deleteModel('DELETE', {id: '#{model.id}'});\n  " + "$('#show_model_#{model.id}_warnings').toggleWarnings('#{model.id}');"
+- js = "$('#delete_#{model.id}').deleteModel('DELETE', {id: '#{model.id}'});\n  " + "$('#show_model_#{model.id}_warnings').toggleWarnings('#{model.id}');\n"
 :javascript
   $(function() {
     #{js}
   });
   
-%div{:id => "model_#{model.id}"}  
-  %h2
-    = model.name
+%div{:id => "model_#{model.id}"}
+  %div{:id => "model_#{model.id}_name"}
+    = haml :model_name, :locals=>{:model=>model}, :layout => false
   .model
     %dl
       %dt Status:
