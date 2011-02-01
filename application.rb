@@ -28,13 +28,16 @@ helpers do
 
   private 
   def delete_model(model, subjectid=nil)
-    begin RestClient.put(File.join(model.task_uri, 'Cancelled'),subjectid) if model.task_uri rescue LOGGER.warn "Can not cancel task #{model.task_uri}" end
-    delete_dependent(model.uri, subjectid) if model.uri
-    delete_dependent(model.validation_uri, subjectid) if model.validation_uri
-    delete_dependent(model.validation_report_uri, subjectid) if model.validation_report_uri
-    delete_dependent(model.validation_qmrf_uri, subjectid) if model.validation_qmrf_uri
-    delete_dependent(model.training_dataset, subjectid) if model.training_dataset
-    delete_dependent(model.feature_dataset, subjectid) if model.feature_dataset
+    task = OpenTox::Task.create("Deleting model: #{model.uri}",url_for("/delete",:full)) do
+      begin RestClient.put(File.join(model.task_uri, 'Cancelled'),subjectid) if model.task_uri rescue LOGGER.warn "Can not cancel task #{model.task_uri}" end
+      delete_dependent(model.uri, subjectid) if model.uri
+      delete_dependent(model.validation_uri, subjectid) if model.validation_uri
+      delete_dependent(model.validation_report_uri, subjectid) if model.validation_report_uri
+      delete_dependent(model.validation_qmrf_uri, subjectid) if model.validation_qmrf_uri
+      delete_dependent(model.training_dataset, subjectid) if model.training_dataset
+      delete_dependent(model.feature_dataset, subjectid) if model.feature_dataset
+      ""
+    end
   end
 
   def delete_dependent(uri, subjectid=nil)
@@ -229,9 +232,10 @@ post '/models' do # create a new model
 
     unless url_for("",:full).match(/localhost/)
       @model.update :status => "Validating model"
+      LOGGER.debug "mr ::: #{lazar.metadata.inspect}"
       begin
         validation = OpenTox::Validation.create_crossvalidation(
-          :algorithm_uri => OpenTox::Algorithm::Lazar.uri,
+          :algorithm_uri => lazar.metadata[OT.algorithm],
           :dataset_uri => lazar.parameter("dataset_uri"),
           :subjectid => subjectid,
           :prediction_feature => lazar.parameter("prediction_feature"),
@@ -243,28 +247,27 @@ post '/models' do # create a new model
         LOGGER.debug "Model validation failed with #{e.message}."
         @model.warnings += "Model validation failed with #{e.message}."
       end
-
       # create summary
-      validation.summary(@model.type).each{|k,v| eval "@model.#{k.to_s} = v"}
+      validation.summary(@model.type, subjectid).each do |k,v|
+        LOGGER.debug "mr ::: k: #{k.inspect} - v: #{v.inspect}" 
+        eval "@model.#{k.to_s} = v"
+      end
       @model.save
-      
       @model.update :status => "Creating validation report"
       begin
-        @model.update(:validation_report_uri => validation.create_report)
+        @model.update(:validation_report_uri => validation.create_report(subjectid))
       rescue => e
         LOGGER.debug "Validation report generation failed with #{e.message}."
         @model.warnings += "Validation report generation failed with #{e.message}."
       end
-
       @model.update :status => "Creating QMRF report"
       begin
-        @model.update(:validation_qmrf_report_uri => validation.create_qmrf_report)
+        @model.update(:validation_qmrf_report_uri => validation.create_qmrf_report(subjectid))
       rescue => e
         LOGGER.debug "Validation QMRF report generation failed with #{e.message}."
         @model.warnings += "Validation QMRF report generation failed with #{e.message}."
       end
     end
-
 
 
     #@model.warnings += "<p>Incorrect Smiles structures (ignored):</p>" + parser.smiles_errors.join("<br/>") unless parser.smiles_errors.empty?
