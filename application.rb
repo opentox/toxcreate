@@ -93,6 +93,20 @@ get '/model/:id/status/?' do
   end
 end
 
+get '/model/:id/progress/?' do
+  response['Content-Type'] = 'text/plain'
+  model = ToxCreateModel.get(params[:id])
+  if (task = OpenTox::Task.exist?(model.task_uri))
+    task = OpenTox::Task.exist?(model.task_uri) 
+    percentage_completed = task.metadata[OT.percentageCompleted]
+  end 
+  begin
+    haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false
+  rescue
+    return "unavailable"
+  end
+end
+
 get '/model/:id/name/?' do
   response['Content-Type'] = 'text/plain'
   model = ToxCreateModel.get(params[:id])

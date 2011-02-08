@@ -23,6 +23,7 @@ $(function() {
     $("body")
     var newstati = new Array;
     $.each(stati, function(){
+      checkProgress(this, subjectstr);
       if(checkStatus(this, subjectstr) > 0) newstati.push(this);
     });  
     if (newstati.length > 0) var statusCheck = setTimeout('checkStati("' + newstati.join(", ") + '", "' + subjectstr + '")',10000);
@@ -59,6 +60,31 @@ $(function() {
     });
     return id;
   };
+  
+  
+  checkProgress = function(id, subjectstr) {
+    var opts = {action: 'model/' + id + '/progress' + subjectstr, id: id};
+    var progress_changed = $.ajax({
+      url: opts.action,
+      async: false,
+      dataType: 'html',
+      data: {
+        '_method': 'get'
+      },
+      success: function(data) {
+        var progress = data.trim();
+        if (progress == "100") return -1;         
+        
+        $("div#model_" + id + "_progress").progressbar("value", parseInt(progress));        
+      },
+      error: function(data) {
+        id = -1;
+      }
+    });
+    return id;
+  };    
+  
+  
 
   loadModel = function(id, view) {
     if(id == "") return -1; 
