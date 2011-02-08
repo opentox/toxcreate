@@ -154,6 +154,7 @@ post '/models' do # create a new model
     end
     @model.training_dataset = @dataset.uri
     @model.nr_compounds = @dataset.compounds.size
+    @model.warnings = ""
     @model.warnings = @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings].empty?
     @model.save
 
@@ -176,11 +177,13 @@ post '/models' do # create a new model
     end
     @model.save
 
+=begin
+=end
     unless url_for("",:full).match(/localhost/)
       @model.update :status => "Validating model"
-      begin
-        validation = OpenTox::Validation.create_crossvalidation(
-          :algorithm_uri => OpenTox::Algorithm::Lazar.uri,
+      #begin
+        validation = OpenTox::Crossvalidation.create(
+          :algorithm_uri => File.join(CONFIG[:services]["opentox-algorithm"],"lazar"),
           :dataset_uri => lazar.parameter("dataset_uri"),
           :subjectid => session[:subjectid],
           :prediction_feature => lazar.parameter("prediction_feature"),
@@ -188,18 +191,19 @@ post '/models' do # create a new model
         )
         @model.update(:validation_uri => validation.uri)
         LOGGER.debug "Validation URI: #{@model.validation_uri}"
-      rescue => e
-        LOGGER.debug "Model validation failed with #{e.message}."
-        @model.warnings += "Model validation failed with #{e.message}."
-      end
+      #rescue => e
+        #LOGGER.debug "Model validation failed with #{e.message}."
+        #@model.warnings += "Model validation failed with #{e.message}."
+      #end
 
       # create summary
-      validation.summary(@model.type).each{|k,v| eval "@model.#{k.to_s} = v"}
+=begin
+      validation.summary(@model.type,session[:subjectid]).each{|k,v| eval "@model.#{k.to_s} = v"}
       @model.save
       
       @model.update :status => "Creating validation report"
       begin
-        @model.update(:validation_report_uri => validation.create_report)
+        @model.update(:validation_report_uri => validation.create_report(session[:subjectid]))
       rescue => e
         LOGGER.debug "Validation report generation failed with #{e.message}."
         @model.warnings += "Validation report generation failed with #{e.message}."
@@ -207,11 +211,12 @@ post '/models' do # create a new model
 
       @model.update :status => "Creating QMRF report"
       begin
-        @model.update(:validation_qmrf_report_uri => validation.create_qmrf_report)
+        @model.update(:validation_qmrf_report_uri => validation.create_qmrf_report(session[:subjectid]))
       rescue => e
         LOGGER.debug "Validation QMRF report generation failed with #{e.message}."
         @model.warnings += "Validation QMRF report generation failed with #{e.message}."
       end
+=end
     end
 
 
