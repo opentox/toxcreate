@@ -28,14 +28,21 @@ helpers do
 
   private 
   def delete_model(model, subjectid=nil)
-    task = OpenTox::Task.create("Deleting model: #{model.uri}",url_for("/delete",:full)) do
+    task = OpenTox::Task.create("Deleting model: #{model.uri}",url_for("/delete",:full)) do |task|
       begin RestClient.put(File.join(model.task_uri, 'Cancelled'),subjectid) if model.task_uri rescue LOGGER.warn "Can not cancel task #{model.task_uri}" end
+      task.progress(15)
       delete_dependent(model.uri, subjectid) if model.uri
+      task.progress(30)
       delete_dependent(model.validation_uri, subjectid) if model.validation_uri
+      task.progress(45)
       delete_dependent(model.validation_report_uri, subjectid) if model.validation_report_uri
+      task.progress(60)
       delete_dependent(model.validation_qmrf_uri, subjectid) if model.validation_qmrf_uri
+      task.progress(75)
       delete_dependent(model.training_dataset, subjectid) if model.training_dataset
+      task.progress(90)
       delete_dependent(model.feature_dataset, subjectid) if model.feature_dataset
+      task.progress(100)
       ""
     end
   end
@@ -72,12 +79,13 @@ get '/models/?' do
   @models = ToxCreateModel.all(:order => [ :created_at.desc ])
   subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
   #@models.each { |model| model.process }
-  haml :models, :locals=>{:models=>@models,:subjectstring => subjectstring}
+  haml :models, :locals=>{:models=>@models, :subjectstring => subjectstring}
 end
 
 get '/model/:id/status/?' do
   response['Content-Type'] = 'text/plain'
   model = ToxCreateModel.get(params[:id])
+  #percentage_completed = task.metadata[OT.percentageCompleted] if (task = OpenTox::Task.exist?(model.task_uri))
   begin
     haml :model_status, :locals=>{:model=>model}, :layout => false
   rescue
@@ -175,9 +183,9 @@ post '/models' do # create a new model
   end
   subjectid = session[:subjectid] ? session[:subjectid] : nil
   @model = ToxCreateModel.create(:name => params[:file][:filename].sub(/\..*$/,""), :subjectid => subjectid)
-  @model.update :web_uri => url_for("/model/#{@model.id}", :full)
+  @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
   @model.save
-  task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do
+  task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
 
     @model.update :status => "Uploading and saving dataset"
     begin
@@ -197,6 +205,7 @@ post '/models' do # create a new model
       error "Dataset creation failed with #{e.message}"
     end
     @dataset.save(subjectid)
+    task.progress(10)
     if @dataset.compounds.size < 10
       error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/excel_format"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."
     end
@@ -212,12 +221,13 @@ post '/models' do # create a new model
     @model.save
 
     @model.update :status => "Creating prediction model"
+    task.progress(15)
     begin
       lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :subjectid => subjectid)
     rescue => e
       error "Model creation failed with '#{e.message}'. Please check if the input file is in a valid #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} format."
     end
-    LOGGER.debug lazar.metadata.to_yaml
+    task.progress(25)
     @model.feature_dataset = lazar.metadata[OT.featureDataset]
     @model.uri = lazar.uri
     case lazar.metadata[OT.isA]
@@ -234,13 +244,13 @@ post '/models' do # create a new model
       @model.update :status => "Validating model"
       LOGGER.debug "mr ::: #{lazar.metadata.inspect}"
       begin
-        validation = OpenTox::Validation.create_crossvalidation(
-          :algorithm_uri => lazar.metadata[OT.algorithm],
+        validation = OpenTox::Crossvalidation.create(
+          {:algorithm_uri => lazar.metadata[OT.algorithm],
           :dataset_uri => lazar.parameter("dataset_uri"),
           :subjectid => subjectid,
           :prediction_feature => lazar.parameter("prediction_feature"),
-          :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}"
-        )
+          :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}"},
+         nil, OpenTox::SubTask.new(task,25,80))
         @model.update(:validation_uri => validation.uri)
         LOGGER.debug "Validation URI: #{@model.validation_uri}"
       rescue => e
@@ -248,21 +258,28 @@ post '/models' do # create a new model
         @model.warnings += "Model validation failed with #{e.message}."
       end
       # create summary
-      validation.summary(@model.type, subjectid).each do |k,v|
+      validation.summary(subjectid).each do |k,v|
         LOGGER.debug "mr ::: k: #{k.inspect} - v: #{v.inspect}" 
-        eval "@model.#{k.to_s} = v"
+        begin
+          eval "@model.#{k.to_s} = v" if v
+        rescue
+          eval "@model.#{k.to_s} = 0"
+        end
       end
       @model.save
+      
       @model.update :status => "Creating validation report"
       begin
-        @model.update(:validation_report_uri => validation.create_report(subjectid))
+        @model.update(:validation_report_uri => validation.find_or_create_report(subjectid, OpenTox::SubTask.new(task,80,90))) unless @model.dirty?
       rescue => e
         LOGGER.debug "Validation report generation failed with #{e.message}."
         @model.warnings += "Validation report generation failed with #{e.message}."
       end
       @model.update :status => "Creating QMRF report"
       begin
-        @model.update(:validation_qmrf_report_uri => validation.create_qmrf_report(subjectid))
+        #@model.update(:validation_qmrf_report_uri => validation.create_qmrf_report(subjectid)) unless @model.dirty?
+        qmrf_report = OpenTox::Crossvalidation::QMRFReport.create(@model.uri, subjectid, OpenTox::SubTask.new(task,90,99))
+        @model.update(:validation_qmrf_uri => qmrf_report.uri)
       rescue => e
         LOGGER.debug "Validation QMRF report generation failed with #{e.message}."
         @model.warnings += "Validation QMRF report generation failed with #{e.message}."
@@ -435,13 +452,13 @@ end
 
 delete '/model/:id/?' do
   model = ToxCreateModel.get(params[:id])
+  raise OpenTox::NotFoundError.new("Model with id: #{params[:id]} not found!") unless model
   begin
-
-    delete_model(model, session[:subjectid])   
+    delete_model(model, @subjectid)   
     model.destroy
     unless ToxCreateModel.get(params[:id])
       begin
-        aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, session[:subjectid])
+        aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
         LOGGER.debug "Policy deleted for Dataset URI: #{uri} with result: #{aa}"
       rescue
         LOGGER.warn "Policy delete error for Dataset URI: #{uri}"
