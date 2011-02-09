@@ -16,23 +16,21 @@
           = haml :model_status, :locals=>{:model=>model}, :layout => false
         - if model.task_uri && model.status != "Completed"
           - if (task = OpenTox::Task.exist?(model.task_uri))
-            - percentage_completed = task.metadata[OT.percentageCompleted]
+            - percentage_completed = task.metadata[OT.percentageCompleted].to_i
             - js = "$('#model_#{model.id}_progress').progressbar({ value: #{percentage_completed} })";
             :javascript
               $(function() {
                 #{js}
               });
               
-            %div{:id => "model_#{model.id}_progress", :class => "model_progress"}
+            %div{:id => "model_#{model.id}_progress", :class => "model_progress", :title => "#{percentage_completed}%", :alt => "#{percentage_completed}%"}
               //= haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false        
         - if is_authorized(model.web_uri, "DELETE")
-          (
-          %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete'} 
+          %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete_link'} 
             - if model.status == "Completed" 
-              delete
+              (delete)
             - else
-              stop 
-          )
+              (stop)
         
       %dt Started:
       %dd= model.created_at.strftime("%m/%d/%Y - %I:%M:%S%p")

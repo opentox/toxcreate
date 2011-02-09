@@ -75,7 +75,9 @@ $(function() {
         var progress = data.trim();
         if (progress == "100") return -1;         
         
-        $("div#model_" + id + "_progress").progressbar("value", parseInt(progress));        
+        $("div#model_" + id + "_progress").progressbar("value", parseInt(progress)); 
+        $("div#model_" + id + "_progress").attr({title: parseInt(progress) + "%", alt: parseInt(progress) + "%"});
+        //$("div#model_" + id + "_progress").attr("alt", parseInt(progress) + "%");
       },
       error: function(data) {
         id = -1;
