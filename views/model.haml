@@ -14,8 +14,9 @@
       %dd
         %span{:id => "model_#{model.id}_status", :class => "model_status"}
           = haml :model_status, :locals=>{:model=>model}, :layout => false
-        - if model.task_uri && model.status !~ /Completed|Cancelled|Error/
+        - if model.task_uri && model.status !~ /Completed|Cancelled|Error|Deleting/
           - if (task = OpenTox::Task.exist?(model.task_uri))
+            %input{:type => 'hidden', :id => "model_#{model.id}_task", :value => "#{model.task_uri}"}
             - percentage_completed = task.metadata[OT.percentageCompleted].to_i
             - js = "$('#model_#{model.id}_progress').progressbar({ value: #{percentage_completed} })";
             :javascript

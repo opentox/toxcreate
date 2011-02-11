@@ -96,14 +96,18 @@ end
 get '/model/:id/progress/?' do
   response['Content-Type'] = 'text/plain'
   model = ToxCreateModel.get(params[:id])
-  if (task = OpenTox::Task.exist?(model.task_uri))
-    task = OpenTox::Task.exist?(model.task_uri) 
-    percentage_completed = task.metadata[OT.percentageCompleted]
-  end 
-  begin
-    haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false
-  rescue
-    return "unavailable"
+  if model.task_uri 
+    if (task = OpenTox::Task.exist?(model.task_uri))
+      task = OpenTox::Task.exist?(model.task_uri) 
+      percentage_completed = task.percentageCompleted
+    end 
+    begin
+      haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false
+    rescue
+      return "unavailable"
+    end
+  else
+    return ""
   end
 end
 
@@ -256,7 +260,6 @@ post '/models' do # create a new model
 
     unless url_for("",:full).match(/localhost/)
       @model.update :status => "Validating model"
-      LOGGER.debug "mr ::: #{lazar.metadata.inspect}"
       begin
         validation = OpenTox::Crossvalidation.create(
           {:algorithm_uri => lazar.metadata[OT.algorithm],
@@ -341,8 +344,8 @@ post '/predict/?' do # post chemical name to model
     title = nil
     db_activities = []
     lazar = OpenTox::Model::Lazar.new model.uri
-    prediction_dataset_uri = lazar.run(:compound_uri => @compound.uri, :subjectid => session[:subjectid])
-    prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri, session[:subjectid])
+    prediction_dataset_uri = lazar.run({:compound_uri => @compound.uri, :subjectid => subjectid})
+    prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri, subjectid)
     if prediction_dataset.metadata[OT.hasSource].match(/dataset/)
       @predictions << {
         :title => model.name,

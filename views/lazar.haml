@@ -55,4 +55,4 @@
           = haml :feature_table, :locals => {:features => sort(@prediction.descriptors(@compound))}, :layout => false
 
     %tbody#neighbors
-      = haml :neighbors, :locals => {:neighbors => @prediction.neighbors(@compound), :page => @page},  :layout => :false
+      = haml :neighbors, :locals => {:neighbors => @prediction.neighbors(@compound), :page => @page},  :layout => false
