@@ -63,7 +63,8 @@ $(function() {
   
   
   checkProgress = function(id, subjectstr) {
-    var opts = {action: 'model/' + id + '/progress' + subjectstr, id: id};
+    var task = $("input#model_" + id + "_task").attr('value');
+    var opts = {action: task + "/percentageCompleted" , id: id};
     var progress_changed = $.ajax({
       url: opts.action,
       async: false,

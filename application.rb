@@ -97,7 +97,7 @@ get '/model/:id/progress/?' do
   response['Content-Type'] = 'text/plain'
   model = ToxCreateModel.get(params[:id])
   if model.task_uri 
-    if (task = OpenTox::Task.exist?(model.task_uri))
+    if (OpenTox::Task.exist?(model.task_uri))
       task = OpenTox::Task.exist?(model.task_uri) 
       percentage_completed = task.percentageCompleted
     end 
