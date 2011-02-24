@@ -14,6 +14,8 @@ use Rack::Session::Cookie, :expire_after => 28800,
                            :secret => "ui6vaiNi-change_me"
 use Rack::Flash
 
+set :lock, true
+
 helpers do 
 
   def error(message)
