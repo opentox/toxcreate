@@ -53,7 +53,7 @@ helpers do
     features = {:activating => [], :deactivating => []}
 
     descriptors.each { |d| LOGGER.debug d.inspect; features[d[OT.effect].to_sym] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} }
-    LOGGER.debug features.to_yaml
+    #LOGGER.debug features.to_yaml
     features
   end
 

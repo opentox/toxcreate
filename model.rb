@@ -1,51 +1,84 @@
-class ToxCreateModel
+require 'ohm'
+#require 'redis/objects'
+#@@redis = Redis.new(:thread_safe=>true)#(:host => '127.0.0.1', :port => 6379)
 
-	include DataMapper::Resource
+class ToxCreateModel < Ohm::Model
 
-	property :id, Serial
-	property :name, String, :length => 255
-	property :warnings, Text, :length => 2**32-1 
-	property :error_messages, Text, :length => 2**32-1  # :errors interferes with datamapper validation
-	property :type, String
-  property :status, String, :length => 255
-	property :created_at, DateTime
+  #include Redis::Objects
+	#include DataMapper::Resource
+	#attribute :id
+	attribute :name
+	attribute :warnings
+	attribute :error_messages
+	attribute :type
+  attribute :status
+	attribute :created_at
 
-	property :task_uri, String, :length => 255
-	property :uri, String, :length => 255
+	attribute :task_uri
+	attribute :uri
 
-	property :training_dataset, String, :length => 255
-	property :feature_dataset, String, :length => 255
-	#property :validation_task_uri, String, :length => 255
-	property :validation_uri, String, :length => 255
+	attribute :training_dataset
+	attribute :feature_dataset
+	#attributey :validation_task_uri
+	attribute :validation_uri
 
-	#property :validation_report_task_uri, String, :length => 255
-	property :validation_report_uri, String, :length => 255
+	#attributey :validation_report_task_uri
+	attribute :validation_report_uri
 
-	#property :validation_qmrf_task_uri, String, :length => 255
-	property :validation_qmrf_uri, String, :length => 255
+	#attributey :validation_qmrf_task_uri
+	attribute :validation_qmrf_uri
 
-	property :nr_compounds, Integer
-	property :nr_predictions, Integer
-	property :true_positives, Integer
-	property :false_positives, Integer
-	property :true_negatives, Integer
-	property :false_negatives, Integer
-	property :correct_predictions, Integer
-	property :weighted_area_under_roc, Float
-	property :sensitivity, Float
-	property :specificity, Float
-	property :r_square, Float
-	property :root_mean_squared_error, Float
-	property :mean_absolute_error, Float
+	attribute :nr_compounds
+	attribute :nr_predictions
+	attribute :true_positives
+	attribute :false_positives
+	attribute :true_negatives
+	attribute :false_negatives
+	attribute :correct_predictions
+	attribute :weighted_area_under_roc
+	attribute :sensitivity
+	attribute :specificity
+	attribute :r_square
+	attribute :root_mean_squared_error
+	attribute :mean_absolute_error
 
-  property :web_uri, String, :length => 255
+  attribute :web_uri
+
+  attr_accessor :subjectid
+  @subjectid = nil
+
+  #after :save, :check_policy
+
+=begin
+  attr_accessor :id, :name, :warnings, :error_messages, :type, :status, :created_at, :task_uri, :uri, :training_dataset, :feature_dataset, :validation_task_uri, :validation_uri, :validation_report_task_uri, :validation_report_uri, :validation_qmrf_task_uri, :validation_qmrf_uri, :nr_compounds, :nr_predictions, :true_positives, :false_positives, :true_negatives, :false_negatives, :correct_predictions, :weighted_area_under_roc, :sensitivity, :specificity, :r_square, :root_mean_squared_error, :mean_absolute_error, :web_uri
+
+  def self.all
+  end
+
+  def self.get(id)
+  end
+  
+  def self.create(params)
+    @id = @@redis.incr "toxcreate"
+    params.each { |k,v| @@redis.hset "toxcreate:#{@id}", k, v }
+    self.get(@id)
+  end
+
+  def update(params)
+  end
+
+  def method_missing
+    begin
+    rescue
+      raise "Unknown method"
+    end
+  end
 
   attr_accessor :subjectid
   @subjectid = nil
 
   after :save, :check_policy
 
-=begin
 def status
 		#begin
 			RestClient.get(File.join(@task_uri, 'hasStatus')).body
@@ -195,4 +228,4 @@ def status
 
 end
 
-DataMapper.auto_upgrade!
+#DataMapper.auto_upgrade!

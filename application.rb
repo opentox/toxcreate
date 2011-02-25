@@ -19,11 +19,8 @@ set :lock, true
 helpers do 
 
   def error(message)
-    @model.error_messages = message
     LOGGER.error message
-    @model.status = "Error"
-    @model.save
-    #@dataset.delete
+    @model.update :status => "Error", :error_messages => message
     flash[:notice] = message
     redirect url_for('/create')
   end
@@ -60,13 +57,9 @@ helpers do
 end
 
 before do
-  #unless env['REQUEST_METHOD'] == "GET" or ( env['REQUEST_URI'] =~ /\/login$/ and env['REQUEST_METHOD'] == "POST" ) or !AA_SERVER
     if !logged_in and !( env['REQUEST_URI'] =~ /\/login$/ and env['REQUEST_METHOD'] == "POST" ) #or !AA_SERVER
       login("guest","guest")
-      #flash[:notice] = "You have to login first to do this."
-      #redirect url_for('/login')
     end
-  #end
 end
 
 get '/?' do
@@ -78,7 +71,7 @@ get '/login' do
 end
 
 get '/models/?' do
-  @models = ToxCreateModel.all(:order => [ :created_at.desc ])
+  @models = ToxCreateModel.all#(:order => [ :created_at.desc ])
   subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
   #@models.each { |model| model.process }
   haml :models, :locals=>{:models=>@models, :subjectstring => subjectstring}
@@ -135,8 +128,8 @@ put '/model/:id/?' do
   model = ToxCreateModel.get(params[:id])
   begin
     if params[:name] && model.name != params[:name]
-      model.name = params[:name]
-      model.save
+      model.update :name => params[:name]
+      #model.save
     end
     redirect url_for("/model/#{model.id}/name?mode=show")
   rescue
@@ -166,7 +159,7 @@ get '/model/:id/:view/?' do
 end
 
 get '/predict/?' do 
-  @models = ToxCreateModel.all(:order => [ :created_at.desc ])
+  @models = ToxCreateModel.all#(:order => [ :created_at.desc ])
   @models = @models.collect{|m| m if m.status == 'Completed'}.compact
   haml :predict
 end
@@ -204,9 +197,10 @@ post '/models' do # create a new model
   subjectid = session[:subjectid] ? session[:subjectid] : nil
   @model = ToxCreateModel.create(:name => params[:file][:filename].sub(/\..*$/,""), :subjectid => subjectid)
   @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
-  @model.save
+  #@model.save
   task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
 
+    task.progress(5)
     @model.update :status => "Uploading and saving dataset"
     begin
       @dataset = OpenTox::Dataset.create(nil, subjectid)
@@ -214,7 +208,7 @@ post '/models' do # create a new model
       case File.extname(params[:file][:filename])
       when ".csv"
         csv = params[:file][:tempfile].read
-        LOGGER.debug csv
+        #LOGGER.debug csv
         @dataset.load_csv(csv, subjectid)
       when ".xls", ".xlsx"
         @dataset.load_spreadsheet(Excel.new params[:file][:tempfile].path, subjectid)
@@ -235,12 +229,14 @@ post '/models' do # create a new model
     if @dataset.metadata[OT.Errors]
       error "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} formats."
     end
-    @model.training_dataset = @dataset.uri
-    @model.nr_compounds = @dataset.compounds.size
-    @model.warnings = @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings].empty?
-    @model.save
+    @model.update :training_dataset => @dataset.uri, :nr_compounds => @dataset.compounds.size, :status => "Creating prediction model"
+    @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings].empty?
+    #@model.training_dataset = @dataset.uri
+    #@model.nr_compounds = @dataset.compounds.size
+    #@model.warnings = @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings].empty?
+    #@model.save
 
-    @model.update :status => "Creating prediction model"
+    #@model.update :status => "Creating prediction model"
     task.progress(15)
     begin
       lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :subjectid => subjectid)
@@ -248,17 +244,16 @@ post '/models' do # create a new model
       error "Model creation failed with '#{e.message}'. Please check if the input file is in a valid #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} format."
     end
     task.progress(25)
-    @model.feature_dataset = lazar.metadata[OT.featureDataset]
-    @model.uri = lazar.uri
+    #@model.feature_dataset = lazar.metadata[OT.featureDataset]
+    #@model.uri = lazar.uri
+    type = "unknown"
     case lazar.metadata[OT.isA]
     when /Classification/
-      @model.type = "classification"
+      type = "classification"
     when /Regression/
-      @model.type = "regression"
-    else
-      @model.type = "unknown"
+      type = "regression"
     end
-    @model.save
+    @model.update :type => type, :feature_dataset => lazar.metadata[OT.featureDataset], :uri => lazar.uri
 
     unless url_for("",:full).match(/localhost/)
       @model.update :status => "Validating model"
@@ -272,37 +267,43 @@ post '/models' do # create a new model
          nil, OpenTox::SubTask.new(task,25,80))
         @model.update(:validation_uri => validation.uri)
         LOGGER.debug "Validation URI: #{@model.validation_uri}"
+
+        # create summary
+        validation.summary(subjectid).each do |k,v|
+          #LOGGER.debug "mr ::: k: #{k.inspect} - v: #{v.inspect}" 
+          begin
+            eval "@model.update :#{k.to_s} => v" if v
+          rescue
+            eval "@model.update :#{k.to_s} => 0"
+          end
+        end
+
+        @model.update :status => "Creating validation report"
+        #begin
+          validation_report_uri = validation.find_or_create_report(subjectid, OpenTox::SubTask.new(task,80,90)) #unless @model.dirty?
+          @model.update :validation_report_uri => validation_report_uri, :status => "Creating QMRF report"
+        #rescue => e
+          #LOGGER.debug "Validation report generation failed with #{e.message}."
+          #@model.update :warnings => @model.warnings + "\nValidation report generation failed with #{e.message}."
+        #end
+        #@model.update :status => "Creating QMRF report"
+        #begin
+          #@model.update(:validation_qmrf_report_uri => validation.create_qmrf_report(subjectid)) unless @model.dirty?
+          qmrf_report = OpenTox::Crossvalidation::QMRFReport.create(@model.uri, subjectid, OpenTox::SubTask.new(task,90,99))
+          @model.update(:validation_qmrf_uri => qmrf_report.uri, :status => "Completed")
+        #rescue => e
+          #LOGGER.debug "Validation QMRF report generation failed with #{e.message}."
+          #@model.update :warnings => @model.warnings + "\nValidation QMRF report generation failed with #{e.message}."
+        #end
+        #@model.update :status => "Completed"
+
       rescue => e
         LOGGER.debug "Model validation failed with #{e.message}."
-        @model.warnings += "Model validation failed with #{e.message}."
+        @model.save # to avoid dirty models
+        @model.update :warnings => @model.warnings + "\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
       end
-      # create summary
-      validation.summary(subjectid).each do |k,v|
-        LOGGER.debug "mr ::: k: #{k.inspect} - v: #{v.inspect}" 
-        begin
-          eval "@model.#{k.to_s} = v" if v
-        rescue
-          eval "@model.#{k.to_s} = 0"
-        end
-      end
-      @model.save
+      #@model.save
       
-      @model.update :status => "Creating validation report"
-      begin
-        @model.update(:validation_report_uri => validation.find_or_create_report(subjectid, OpenTox::SubTask.new(task,80,90))) unless @model.dirty?
-      rescue => e
-        LOGGER.debug "Validation report generation failed with #{e.message}."
-        @model.warnings += "Validation report generation failed with #{e.message}."
-      end
-      @model.update :status => "Creating QMRF report"
-      begin
-        #@model.update(:validation_qmrf_report_uri => validation.create_qmrf_report(subjectid)) unless @model.dirty?
-        qmrf_report = OpenTox::Crossvalidation::QMRFReport.create(@model.uri, subjectid, OpenTox::SubTask.new(task,90,99))
-        @model.update(:validation_qmrf_uri => qmrf_report.uri)
-      rescue => e
-        LOGGER.debug "Validation QMRF report generation failed with #{e.message}."
-        @model.warnings += "Validation QMRF report generation failed with #{e.message}."
-      end
     end
 
 
@@ -311,11 +312,10 @@ post '/models' do # create a new model
     #duplicate_warnings = ''
     #parser.duplicates.each {|inchi,lines| duplicate_warnings += "<p>#{lines.join('<br/>')}</p>" if lines.size > 1 }
     #@model.warnings += "<p>Duplicated structures (all structures/activities used for model building, please  make sure, that the results were obtained from <em>independent</em> experiments):</p>" + duplicate_warnings unless duplicate_warnings.empty?
-    @model.update :status => "Completed"
     lazar.uri
   end
   @model.update(:task_uri => task.uri)
-  @model.save
+  #@model.save
 
   flash[:notice] = "Model creation and validation started - this may last up to several hours depending on the number and size of the training compounds."
   redirect url_for('/models')
@@ -356,7 +356,7 @@ post '/predict/?' do # post chemical name to model
     else
       predicted_feature = prediction_dataset.metadata[OT.dependentVariables]
       prediction = OpenTox::Feature.find(predicted_feature)
-      LOGGER.debug prediction.to_yaml
+      #LOGGER.debug prediction.to_yaml
       if prediction.metadata[OT.error]
         @predictions << {
           :title => model.name,
@@ -403,7 +403,7 @@ post '/predict/?' do # post chemical name to model
     end
 =end
   end
-  LOGGER.debug @predictions.inspect
+  #LOGGER.debug @predictions.inspect
 
   haml :prediction
 end
@@ -491,7 +491,24 @@ delete '/model/:id/?' do
 end
 
 delete '/?' do
-  DataMapper.auto_migrate!
+  #DataMapper.auto_migrate!
+  ToxCreateModel.all.each do |model| 
+#    begin
+#      delete_model(model, @subjectid)   
+      model.delete
+#      unless ToxCreateModel.get(params[:id])
+#        begin
+#          aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
+#          LOGGER.debug "Policy deleted for Dataset URI: #{uri} with result: #{aa}"
+#        rescue
+#          LOGGER.warn "Policy delete error for Dataset URI: #{uri}"
+#        end
+#      end
+#      LOGGER.debug "#{model.name} model deleted."
+#    rescue
+#      LOGGER.error "#{model.name} model delete error."
+#    end
+  end
   response['Content-Type'] = 'text/plain'
   "All Models deleted."
 end

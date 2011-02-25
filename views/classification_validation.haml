@@ -1,17 +1,17 @@
 %dt Correct predictions:
 %dd
-	= sprintf("%.2f", model.correct_predictions) if model.correct_predictions
+	= sprintf("%.2f", model.correct_predictions.to_f) if model.correct_predictions
 	= '%'
 %dt
 	%a{:href => "http://en.wikipedia.org/wiki/Receiver_operating_characteristic", :target => "_blank"} Weighted area under ROC:
 %dd 
-	= sprintf("%.3f", model.weighted_area_under_roc) if model.weighted_area_under_roc
+	= sprintf("%.3f", model.weighted_area_under_roc.to_f) if model.weighted_area_under_roc
 %dt
 	%a{:href => "http://en.wikipedia.org/wiki/Sensitivity_and_specificity", :target => "_blank"} Specificity:
-%dd= sprintf("%.3f", model.specificity) if model.specificity
+%dd= sprintf("%.3f", model.specificity.to_f) if model.specificity
 %dt
 	%a{:href => "http://en.wikipedia.org/wiki/Sensitivity_and_specificity", :target => "_blank"} Sensitivity:
-%dd= sprintf("%.3f", model.sensitivity) if model.sensitivity
+%dd= sprintf("%.3f", model.sensitivity.to_f) if model.sensitivity
 %dt
 	%a{:href => "http://en.wikipedia.org/wiki/Confusion_matrix", :target => "_blank"} Confusion Matrix:
 %dd
