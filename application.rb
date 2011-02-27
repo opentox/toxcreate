@@ -8,7 +8,6 @@ require 'sinatra/static_assets'
 require 'ftools'
 require File.join(File.dirname(__FILE__),'model.rb')
 require File.join(File.dirname(__FILE__),'helper.rb')
-#require File.join(File.dirname(__FILE__),'parser.rb')
 
 use Rack::Session::Cookie, :expire_after => 28800, 
                            :secret => "ui6vaiNi-change_me"
@@ -28,7 +27,7 @@ helpers do
   private 
   def delete_model(model, subjectid=nil)
     task = OpenTox::Task.create("Deleting model: #{model.uri}",url_for("/delete",:full)) do |task|
-      begin RestClient.put(File.join(model.task_uri, 'Cancelled'),subjectid) if model.task_uri rescue LOGGER.warn "Can not cancel task #{model.task_uri}" end
+      begin RestClient.put(File.join(model.task_uri, 'Cancelled'),subjectid) if model.task_uri rescue LOGGER.warn "Cannot cancel task #{model.task_uri}" end
       task.progress(15)
       delete_dependent(model.uri, subjectid) if model.uri
       task.progress(30)
@@ -71,20 +70,18 @@ get '/login' do
 end
 
 get '/models/?' do
-  @models = ToxCreateModel.all#(:order => [ :created_at.desc ])
+  @models = ToxCreateModel.all.reverse
   subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
-  #@models.each { |model| model.process }
   haml :models, :locals=>{:models=>@models, :subjectstring => subjectstring}
 end
 
 get '/model/:id/status/?' do
   response['Content-Type'] = 'text/plain'
   model = ToxCreateModel.get(params[:id])
-  #percentage_completed = task.metadata[OT.percentageCompleted] if (task = OpenTox::Task.exist?(model.task_uri))
   begin
     haml :model_status, :locals=>{:model=>model}, :layout => false
   rescue
-    return "unavailable"
+    return "Model #{params[:id]} not available"
   end
 end
 
@@ -127,10 +124,7 @@ put '/model/:id/?' do
   response['Content-Type'] = 'text/plain'
   model = ToxCreateModel.get(params[:id])
   begin
-    if params[:name] && model.name != params[:name]
-      model.update :name => params[:name]
-      #model.save
-    end
+    model.update :name => params[:name] if params[:name] && model.name != params[:name]
     redirect url_for("/model/#{model.id}/name?mode=show")
   rescue
     return "unavailable"
@@ -143,8 +137,6 @@ get '/model/:id/:view/?' do
   model = ToxCreateModel.get(params[:id])
   subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
   begin
-    #model.process
-    #model.save
     case params[:view]
       when "model"
         haml :model, :locals=>{:model=>model,:subjectstring => subjectstring}, :layout => false
@@ -159,7 +151,7 @@ get '/model/:id/:view/?' do
 end
 
 get '/predict/?' do 
-  @models = ToxCreateModel.all#(:order => [ :created_at.desc ])
+  @models = ToxCreateModel.all.reverse
   @models = @models.collect{|m| m if m.status == 'Completed'}.compact
   haml :predict
 end
@@ -197,7 +189,6 @@ post '/models' do # create a new model
   subjectid = session[:subjectid] ? session[:subjectid] : nil
   @model = ToxCreateModel.create(:name => params[:file][:filename].sub(/\..*$/,""), :subjectid => subjectid)
   @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
-  #@model.save
   task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
 
     task.progress(5)
@@ -208,7 +199,6 @@ post '/models' do # create a new model
       case File.extname(params[:file][:filename])
       when ".csv"
         csv = params[:file][:tempfile].read
-        #LOGGER.debug csv
         @dataset.load_csv(csv, subjectid)
       when ".xls", ".xlsx"
         @dataset.load_spreadsheet(Excel.new params[:file][:tempfile].path, subjectid)
@@ -231,12 +221,6 @@ post '/models' do # create a new model
     end
     @model.update :training_dataset => @dataset.uri, :nr_compounds => @dataset.compounds.size, :status => "Creating prediction model"
     @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings].empty?
-    #@model.training_dataset = @dataset.uri
-    #@model.nr_compounds = @dataset.compounds.size
-    #@model.warnings = @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings].empty?
-    #@model.save
-
-    #@model.update :status => "Creating prediction model"
     task.progress(15)
     begin
       lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :subjectid => subjectid)
@@ -244,8 +228,6 @@ post '/models' do # create a new model
       error "Model creation failed with '#{e.message}'. Please check if the input file is in a valid #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} format."
     end
     task.progress(25)
-    #@model.feature_dataset = lazar.metadata[OT.featureDataset]
-    #@model.uri = lazar.uri
     type = "unknown"
     case lazar.metadata[OT.isA]
     when /Classification/
@@ -279,30 +261,16 @@ post '/models' do # create a new model
         end
 
         @model.update :status => "Creating validation report"
-        #begin
-          validation_report_uri = validation.find_or_create_report(subjectid, OpenTox::SubTask.new(task,80,90)) #unless @model.dirty?
-          @model.update :validation_report_uri => validation_report_uri, :status => "Creating QMRF report"
-        #rescue => e
-          #LOGGER.debug "Validation report generation failed with #{e.message}."
-          #@model.update :warnings => @model.warnings + "\nValidation report generation failed with #{e.message}."
-        #end
-        #@model.update :status => "Creating QMRF report"
-        #begin
-          #@model.update(:validation_qmrf_report_uri => validation.create_qmrf_report(subjectid)) unless @model.dirty?
-          qmrf_report = OpenTox::Crossvalidation::QMRFReport.create(@model.uri, subjectid, OpenTox::SubTask.new(task,90,99))
-          @model.update(:validation_qmrf_uri => qmrf_report.uri, :status => "Completed")
-        #rescue => e
-          #LOGGER.debug "Validation QMRF report generation failed with #{e.message}."
-          #@model.update :warnings => @model.warnings + "\nValidation QMRF report generation failed with #{e.message}."
-        #end
-        #@model.update :status => "Completed"
+        validation_report_uri = validation.find_or_create_report(subjectid, OpenTox::SubTask.new(task,80,90)) #unless @model.dirty?
+        @model.update :validation_report_uri => validation_report_uri, :status => "Creating QMRF report"
+        qmrf_report = OpenTox::Crossvalidation::QMRFReport.create(@model.uri, subjectid, OpenTox::SubTask.new(task,90,99))
+        @model.update(:validation_qmrf_uri => qmrf_report.uri, :status => "Completed")
 
       rescue => e
         LOGGER.debug "Model validation failed with #{e.message}."
         @model.save # to avoid dirty models
         @model.update :warnings => @model.warnings + "\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
       end
-      #@model.save
       
     end
 
@@ -315,13 +283,10 @@ post '/models' do # create a new model
     lazar.uri
   end
   @model.update(:task_uri => task.uri)
-  #@model.save
 
   flash[:notice] = "Model creation and validation started - this may last up to several hours depending on the number and size of the training compounds."
   redirect url_for('/models')
 
-=begin
-=end
 end
 
 post '/predict/?' do # post chemical name to model
@@ -340,7 +305,6 @@ post '/predict/?' do # post chemical name to model
   @predictions = []
   params[:selection].keys.each do |id|
     model = ToxCreateModel.get(id.to_i)
-    #model.process unless model.uri
     prediction = nil
     confidence = nil
     title = nil
@@ -356,7 +320,6 @@ post '/predict/?' do # post chemical name to model
     else
       predicted_feature = prediction_dataset.metadata[OT.dependentVariables]
       prediction = OpenTox::Feature.find(predicted_feature)
-      #LOGGER.debug prediction.to_yaml
       if prediction.metadata[OT.error]
         @predictions << {
           :title => model.name,
@@ -372,38 +335,7 @@ post '/predict/?' do # post chemical name to model
       end
     end
     # TODO failed/unavailable predictions
-=begin
-    source = prediction.creator
-    if prediction.data[@compound.uri]
-      if source.to_s.match(/model/) # real prediction
-        prediction = prediction.data[@compound.uri].first.values.first
-        #LOGGER.debug prediction[File.join(CONFIG[:services]["opentox-model"],"lazar#classification")]
-        #LOGGER.debug prediction[File.join(CONFIG[:services]["opentox-model"],"lazar#confidence")]
-        if !prediction[File.join(CONFIG[:services]["opentox-model"],"lazar#classification")].nil?
-          @predictions << {
-            :title => model.name,
-            :model_uri => model.uri,
-            :prediction => prediction[File.join(CONFIG[:services]["opentox-model"],"lazar#classification")],
-            :confidence => prediction[File.join(CONFIG[:services]["opentox-model"],"lazar#confidence")]
-            }
-        elsif !prediction[File.join(CONFIG[:services]["opentox-model"],"lazar#regression")].nil?
-          @predictions << {
-            :title => model.name,
-            :model_uri => model.uri,
-            :prediction => prediction[File.join(CONFIG[:services]["opentox-model"],"lazar#regression")],
-            :confidence => prediction[File.join(CONFIG[:services]["opentox-model"],"lazar#confidence")]
-            }
-        end
-      else # database value
-        prediction = prediction.data[@compound.uri].first.values
-        @predictions << {:title => model.name, :measured_activities => prediction}
-      end
-    else
-      @predictions << {:title => model.name, :prediction => "not available (not enough similar compounds in the training dataset)"}
-    end
-=end
   end
-  #LOGGER.debug @predictions.inspect
 
   haml :prediction
 end
@@ -416,40 +348,10 @@ post "/lazar/?" do # get detailed prediction
   prediction_dataset_uri = lazar.run(:compound_uri => params[:compound_uri], :subjectid => params[:subjectid])
   @prediction = OpenTox::LazarPrediction.find(prediction_dataset_uri, session[:subjectid])
   @compound = OpenTox::Compound.new(params[:compound_uri])
-  #@title = prediction.metadata[DC.title]
-  # TODO dataset activity
-  #@activity = prediction.metadata[OT.prediction]
-  #@confidence = prediction.metadata[OT.confidence]
-  #@neighbors = []
-  #@features = []
-#  if @prediction.data[@compound.uri]
-#    if @prediction.creator.to_s.match(/model/) # real prediction
-#      p = @prediction.data[@compound.uri].first.values.first
-#      if !p[File.join(CONFIG[:services]["opentox-model"],"lazar#classification")].nil?
-#        feature = File.join(CONFIG[:services]["opentox-model"],"lazar#classification")
-#      elsif !p[File.join(CONFIG[:services]["opentox-model"],"lazar#regression")].nil?
-#        feature = File.join(CONFIG[:services]["opentox-model"],"lazar#regression")
-#      end
-#      @activity = p[feature]
-#      @confidence = p[File.join(CONFIG[:services]["opentox-model"],"lazar#confidence")]
-#      @neighbors = p[File.join(CONFIG[:services]["opentox-model"],"lazar#neighbors")]
-#      @features = p[File.join(CONFIG[:services]["opentox-model"],"lazar#features")]
-#    else # database value
-#      @measured_activities = @prediction.data[@compound.uri].first.values
-#    end
-#  else
-#    @activity = "not available (no similar compounds in the training dataset)"
-#  end
   haml :lazar
 end
 
 post '/login' do
-=begin
-  if session[:subjectid] != nil
-    flash[:notice] = "You are already logged in as user: #{session[:username]}. Please log out first."
-    redirect url_for('/login')
-  end
-=end
   if params[:username] == '' || params[:password] == ''
     flash[:notice] = "Please enter username and password."
     redirect url_for('/login')
@@ -457,7 +359,6 @@ post '/login' do
   if login(params[:username], params[:password])
     flash[:notice] = "Welcome #{session[:username]}!"
     redirect url_for('/create')
-    #haml :create
   else
     flash[:notice] = "Login failed. Please try again."
     haml :login
@@ -474,7 +375,7 @@ delete '/model/:id/?' do
   raise OpenTox::NotFoundError.new("Model with id: #{params[:id]} not found!") unless model
   begin
     delete_model(model, @subjectid)   
-    model.destroy
+    model.delete
     unless ToxCreateModel.get(params[:id])
       begin
         aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
@@ -491,23 +392,22 @@ delete '/model/:id/?' do
 end
 
 delete '/?' do
-  #DataMapper.auto_migrate!
   ToxCreateModel.all.each do |model| 
-#    begin
-#      delete_model(model, @subjectid)   
+    begin
+      delete_model(model, @subjectid)   
       model.delete
-#      unless ToxCreateModel.get(params[:id])
-#        begin
-#          aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
-#          LOGGER.debug "Policy deleted for Dataset URI: #{uri} with result: #{aa}"
-#        rescue
-#          LOGGER.warn "Policy delete error for Dataset URI: #{uri}"
-#        end
-#      end
-#      LOGGER.debug "#{model.name} model deleted."
-#    rescue
-#      LOGGER.error "#{model.name} model delete error."
-#    end
+      unless ToxCreateModel.get(params[:id])
+        begin
+          aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
+          LOGGER.debug "Policy deleted for Dataset URI: #{uri} with result: #{aa}"
+        rescue
+          LOGGER.warn "Policy delete error for Dataset URI: #{uri}"
+        end
+      end
+      LOGGER.debug "#{model.name} model deleted."
+    rescue
+      LOGGER.error "#{model.name} model delete error."
+    end
   end
   response['Content-Type'] = 'text/plain'
   "All Models deleted."
