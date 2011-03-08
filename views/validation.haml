@@ -10,7 +10,7 @@
           %dd
             %a{:href => model.validation_report_uri + subjectstring, :target => "_blank"} show
         %dt Number of predictions
-        %dd= model.nr_predictions
+        %dd= model.nr_predictions.to_s
         - case model.type
         - when "classification"
           = haml :classification_validation, :locals=>{:model=>model}, :layout => false if model.correct_predictions
