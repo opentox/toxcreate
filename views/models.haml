@@ -1,15 +1,16 @@
-- stati = @models.map{|m| "#{m.id}" if m.status != "Completed"}.compact
+- stati = @models.map{|m| "#{m.id}" if m.status !~ /Completed|Error/}.compact
 - stati_to_check = stati.length > 0 ? stati.join(", ") : stati = 0 
 :javascript
   $(function() {
     if(#{stati != 0}) { 
-      setTimeout('checkStati("#{stati_to_check}")',1500);
+      setTimeout('checkStati("#{stati_to_check}", "#{subjectstring}")',5000);
     }
     var reload_validation = true;
-    if(reload_validation) setTimeout('checkValidation()',15000);
+    //if(reload_validation) setTimeout('checkValidation()',15000);
   });
 
-%p Get an overview about ToxCreate models. This page is refreshed every 15 seconds to update the model status.
+-# %p Get an overview about ToxCreate models. This page is refreshed every 15 seconds to update the model status.
+%p Get an overview about ToxCreate models. This page is refreshed every 5 seconds to update the model status.
 
 -# explanations
 = haml :lazar_description, :layout => false
@@ -17,4 +18,4 @@
 = haml :regression, :layout => false
 
 - @models.each do |model|
-  = haml :model, :locals=>{:model=>model}, :layout => false 
+  = haml :model, :locals=>{:model=>model,:subjectstring=>subjectstring}, :layout => false 

@@ -12,22 +12,25 @@
   %table
     %thead
       %tr
-        %th= @title.gsub(/_lazar_.*$/,' ').capitalize
+        %th= @prediction.title
         %th= toggle_link("#lazar_algorithm","Prediction")
         %th= toggle_link("#confidence","Confidence")
         %th Supporting information
 
       %tr
-        %td.image= compound_image(@compound,@features)
-        %td= activity_markup(@activity)
-        %td= sprintf('%.03g', @confidence.to_f.abs) if @confidence
+        -# %td
+          %img{:src => @compound.to_image_uri, :alt => @compound.to_smiles}
+        %td.image= compound_image(@compound,@prediction.descriptors(@compound))
+        %td= activity_markup(@prediction.value(@compound))
+        %td= sprintf('%.03g', @prediction.confidence(@compound)) 
+        -#%td= @prediction.confidence(@compound)
         %td
           %ul
             %li
               %a{:href => "#prediction", :id => "show_names"} Names and synonyms
               :javascript
                 $("a#show_names").click(function () {
-                  $("#compound_names").load("#{File.join("compound",@compound.inchi)}");  
+                  $("#compound_names").load("#{File.join("/compound",@compound.inchi)}");  
                   $("tr#names").toggle();  
                 });
             %li= toggle_link("#fragments","Significant fragments")
@@ -49,7 +52,8 @@
       %tr#fragments{ :style => "display: none;" }
         %td{:colspan => '4'}
           = hide_link('#fragments')
-          = haml :feature_table, :locals => {:features => @features}, :layout => false
+          = haml :feature_table, :locals => {:features => sort(@prediction.descriptors(@compound))}, :layout => false
 
     %tbody#neighbors
-      = haml :neighbors, :locals => {:neighbors => @neighbors, :page => @page},  :layout => :false
+      = haml :neighbors, :locals => {:neighbors => @prediction.neighbors(@compound), :page => @page},  :layout => false
+

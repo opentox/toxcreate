@@ -26,9 +26,11 @@
         - @models.each do |model|
           %label{:for => model.id}
             = model.name
-          %input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id} 
+          -#%input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id, :disabled => !is_authorized(model.uri, "GET")} 
+          %input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id, :disabled => false} 
           %br
 
+      %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
       %input{ :type => "submit", :value => "Predict", :onclick => "getsmiles();"}
       = link_to 'Cancel', '/predict' 
 

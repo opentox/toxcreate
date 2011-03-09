@@ -1,18 +1,14 @@
-%dl{:id => "model_validation_#{model.id}"}
-  %dt
-    Validation:
-    %input{ :id => "model_validation_report_#{model.id}", :type => "hidden", :value => "#{model.validation_report_status}", :class => "model_validation_report" }
-  %dd
-    - if model.validation_uri
+- if model.validation_uri
+  %dl{:id => "model_validation_#{model.id}"}
+    %dt
+      Validation:
+      -# %input{ :id => "model_validation_report_#{model.id}", :type => "hidden", :value => "#{model.validation_report_status}", :class => "model_validation_report" }
+    %dd
       %dl
-        %dt
-          Detailed report:
-        %dd
-          - if model.validation_report_uri
-            %a{:href => model.validation_report_uri, :target => "_blank"} show
-          - else
-            = image_tag("/snake_transparent.gif") if model.validation_report_status == "Running"
-            %a{:href => model.validation_report_task_uri} #{model.validation_report_status}
+        - if model.validation_report_uri
+          %dt Detailed report:
+          %dd
+            %a{:href => model.validation_report_uri + subjectstring, :target => "_blank"} show
         %dt Number of predictions
         %dd= model.nr_predictions
         - case model.type
@@ -20,8 +16,8 @@
           = haml :classification_validation, :locals=>{:model=>model}, :layout => false if model.correct_predictions
         - when "regression"
           = haml :regression_validation, :locals=>{:model=>model}, :layout => false     
-    - else
-      = image_tag("/snake_transparent.gif") if model.validation_status == "Running"
-      %a{:href => model.validation_task_uri} #{model.validation_status}
-          
+-# else
+  = image_tag("/snake_transparent.gif") if model.validation_status == "Running"
+  %a{:href => model.validation_task_uri} #{model.validation_status}
+            
 

@@ -3,13 +3,14 @@
   %form{:name => "nav", :action => url_for('/lazar#prediction'), :method => "post", :enctype => "multipart/form-data", :id => "nav"}
     %input{:type => :hidden, :name => :compound_uri, :value => @compound.uri}
     %input{:type => :hidden, :name => :model_uri, :value => @model_uri}
+    %input{:type => :hidden, :name => :subjectid, :value => session[:subjectid]}    
     %input{:type => :hidden, :name => :page, :id => "page"}
 
     #prev= "prev" unless @page.to_i == 0
 
-    = "(#{5*@page+1}-#{5*@page+5}/#{@neighbors.size})" 
+    = "(#{5*@page+1}-#{5*@page+5}/#{@prediction.neighbors(@compound).size})" 
 
-    #next= "next" unless 5*@page.to_i+5 >= @neighbors.size
+    #next= "next" unless 5*@page.to_i+5 >= @prediction.neighbors(@compound).size
 
     :javascript
       $("#prev").click(function() {

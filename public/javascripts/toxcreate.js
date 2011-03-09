@@ -14,19 +14,24 @@ $(function() {
     });
   };
 
-  checkStati = function(stati) {
-    stati = stati.split(", ")
+  trim = function() {
+    return this.replace(/^\s+|\s+$/g, '');
+  }
+
+  checkStati = function(stati, subjectstr) {
+    stati = stati.split(", ");
     $("body")
     var newstati = new Array;
     $.each(stati, function(){
-      if(checkStatus(this) > 0) newstati.push(this);
+      checkProgress(this, subjectstr);
+      if(checkStatus(this, subjectstr) > 0) newstati.push(this);
     });  
-    if (newstati.length > 0) var statusCheck = setTimeout('checkStati("' + newstati.join(", ") + '")',10000);
+    if (newstati.length > 0) var statusCheck = setTimeout('checkStati("' + newstati.join(", ") + '", "' + subjectstr + '")',10000);
   };
   
-  checkStatus = function(id) {
+  checkStatus = function(id, subjectstr) {
     if(id == "") return -1; 
-    var opts = {method: 'get', action: 'model/' + id + '/status', id: id};
+    var opts = {method: 'get', action: 'model/' + id + '/status' + subjectstr, id: id};
     var status_changed = $.ajax({
       type: opts.method,
       url: opts.action,
@@ -36,15 +41,16 @@ $(function() {
         '_method': 'get'
       },
       success: function(data) {
-        var erg = data.search(/Running/);
-        status_changed = false;
-        if(erg < 0) status_changed = true;        
-        $("span#model_" + id + "_status").animate({"opacity": "0.1"},1000);
+        var status_before = "";
+        if ($("span#model_" + id + "_status") != null) status_before = $("span#model_" + id + "_status").html().trim();
+        if (status_before == "Deleting") return -1;         
+        var status_after  = data.trim();
+        $("span#model_" + id + "_status").animate({"opacity": "0.2"},1000);
         $("span#model_" + id + "_status").animate({"opacity": "1"},1000);
-        if( status_changed ) {
+        if( status_before != status_after) {
           $("span#model_" + id + "_status").html(data);        
           loadModel(id, 'model');
-          id = -1;
+          if (status_after == "Completed") id = -1;
         }        
       },
       error: function(data) {
@@ -54,6 +60,34 @@ $(function() {
     });
     return id;
   };
+  
+  
+  checkProgress = function(id, subjectstr) {
+    var task = $("input#model_" + id + "_task").attr('value');
+    var opts = {action: task + "/percentageCompleted" , id: id};
+    var progress_changed = $.ajax({
+      url: opts.action,
+      async: false,
+      dataType: 'html',
+      data: {
+        '_method': 'get'
+      },
+      success: function(data) {
+        var progress = data.trim();
+        if (progress == "100") return -1;         
+        
+        $("div#model_" + id + "_progress").progressbar("value", parseInt(progress)); 
+        $("div#model_" + id + "_progress").attr({title: parseInt(progress) + "%", alt: parseInt(progress) + "%"});
+        //$("div#model_" + id + "_progress").attr("alt", parseInt(progress) + "%");
+      },
+      error: function(data) {
+        id = -1;
+      }
+    });
+    return id;
+  };    
+  
+  
 
   loadModel = function(id, view) {
     if(id == "") return -1; 
@@ -85,9 +119,67 @@ $(function() {
           if(/^\d+$/.test(reload_id)) loadModel(reload_id, 'validation');
         };
     });
-    var validationCheck = setTimeout('checkValidation()',15000);
+    //var validationCheck = setTimeout('checkValidation()',15000);
+    var validationCheck = setTimeout('checkValidation()',5000);
   }
 });
+
+jQuery.fn.editModel = function(type, options) {
+  var defaults = {
+    method: 'get',
+    action: this.attr('href'),
+    trigger_on: 'click'
+  };
+  var opts = $.extend(defaults, options);
+  this.bind(opts.trigger_on, function() {  
+    $.ajax({
+         type: opts.method,
+         url:  opts.action,
+         dataType: 'html',
+         data: {
+           '_method': 'get'
+         },
+         success: function(data) {         
+           $("div#model_" + opts.id + "_name").html(data);
+           $("input#model_" + opts.id + "_name").focus();
+         },
+         error: function(data) {
+           alert("model edit error!");
+         }
+       });
+    return false;
+  });
+};
+
+jQuery.fn.saveModel = function(type, options) {
+  var defaults = {
+    method: 'put',
+    action: 'model/' + options.id,
+    trigger_on: 'click'
+  };
+  var opts = $.extend(defaults, options);
+  
+  this.bind(opts.trigger_on, function() {  
+    var name =  $("input#model_" + opts.id + "_name").val();  
+    $.ajax({
+         type: opts.method,
+         url:  opts.action,
+         dataType: 'html',
+         data: {
+           '_method': 'put',
+           'name': name
+         },
+         success: function(data) {         
+           $("div#model_" + opts.id + "_name").html(data);
+         },
+         error: function(data) {
+           alert("model save error!");
+         }
+       });
+    return false;
+  });
+};
+
 
 jQuery.fn.deleteModel = function(type, options) {
   var defaults = {
@@ -99,7 +191,8 @@ jQuery.fn.deleteModel = function(type, options) {
   var opts = $.extend(defaults, options);
   this.bind(opts.trigger_on, function() {
     if(confirm(opts.confirm_message)) {
-      $(opts.elem).fadeTo("slow",0.5);
+      $("div#model_" + opts.id).fadeTo("slow",0.5);
+      $("span#model_" + opts.id + "_status").html("Deleting");
       $.ajax({
          type: opts.method,
          url:  opts.action,
@@ -108,9 +201,10 @@ jQuery.fn.deleteModel = function(type, options) {
            '_method': 'delete'
          },
          success: function(data) {         
-           $(opts.elem).fadeTo("slow",0).slideUp("slow").remove();
+           $("div#model_" + opts.id).fadeTo("slow",0).slideUp("slow").remove();
          },
          error: function(data) {
+           $("span#model_" + opts.id + "_status").html("Delete Error");
            //alert("model delete error!");
          }
        });

@@ -7,8 +7,9 @@
         = @identifier
     %tr
       %td
-        %img{:src => @compound.image_uri, :alt => @compound.smiles}
+        %img{:src => @compound.to_image_uri, :alt => @compound.to_smiles}
       - @predictions.each do |p|
+        - LOGGER.debug p.to_yaml
         %td
           %b
             = p[:title] + ":"
@@ -25,8 +26,8 @@
                 });
               )
 
-          - elsif p[:prediction].to_s.match(/not available/)
-            = p[:prediction]
+          - elsif p[:error]
+            %br= p[:error]
           - else
             = activity_markup(p[:prediction])
             - if p[:confidence]
@@ -43,6 +44,7 @@
               %form{:name => "form", :action => url_for('/lazar'), :method => "post", :enctype => "multipart/form-data" }
                 %input{:type => :hidden, :name => :compound_uri, :value => @compound.uri}
                 %input{:type => :hidden, :name => :model_uri, :value => p[:model_uri]}
+                %input{:type => :hidden, :name => :subjectid, :value => session[:subjectid]}
                 %input{ :type => "submit", :value => "Details"}
 
 = haml :confidence, :layout => false
