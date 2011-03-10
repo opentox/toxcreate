@@ -87,7 +87,6 @@ def status
 		#end
 	end
 =end
-=begin
 
 	def validation_status
 		begin
@@ -137,6 +136,7 @@ def status
 		end
 	end
 
+=begin
   def process
 
     LOGGER.debug self.to_yaml
