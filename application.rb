@@ -70,7 +70,7 @@ get '/login' do
 end
 
 get '/models/?' do
-  @models = ToxCreateModel.all.to_a.reverse
+  @models = ToxCreateModel.all#.to_a.reverse
   subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
   haml :models, :locals=>{:models=>@models, :subjectstring => subjectstring}
 end
@@ -151,7 +151,7 @@ get '/model/:id/:view/?' do
 end
 
 get '/predict/?' do 
-  @models = ToxCreateModel.all.to_a.reverse
+  @models = ToxCreateModel.all#.to_a.reverse
   @models = @models.collect{|m| m if m.status == 'Completed'}.compact
   haml :predict
 end
