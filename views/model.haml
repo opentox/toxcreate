@@ -75,7 +75,8 @@
           %em  (experts)
       - if model.uri
         %dt Model:
-        %dd
+        %dd{:id => "model_qmrf_#{model.id}"}
+          %input{ :id => "model_validation_qmrf_#{model.id}", :type => "hidden", :value => "#{model.validation_qmrf_status}", :class => "model_validation_qmrf" }
           -#%a{:href => "#{model.uri}.rdf"} RDF/XML
           -#,
           - if model.validation_qmrf_uri

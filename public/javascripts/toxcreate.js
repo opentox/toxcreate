@@ -119,8 +119,18 @@ $(function() {
           if(/^\d+$/.test(reload_id)) loadModel(reload_id, 'validation');
         };
     });
+//<<<<<<< HEAD
     //var validationCheck = setTimeout('checkValidation()',15000);
-    var validationCheck = setTimeout('checkValidation()',5000);
+    //var validationCheck = setTimeout('checkValidation()',5000);
+//=======
+    $("input.model_validation_qmrf").each(function(){
+        if(!$(this).val().match(/Completed|Error/)) {
+          reload_id = this.id.replace("model_validation_qmrf_","");
+          if(/^\d+$/.test(reload_id)) loadModel(reload_id, 'model');
+        };
+    });
+    var validationCheck = setTimeout('checkValidation()',15000);
+//>>>>>>> d1ad229730f6e6043fe6e7a150e05ffa41e3cec2
   }
 });
 
