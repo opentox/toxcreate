@@ -17,5 +17,6 @@
 = haml :classification, :layout => false
 = haml :regression, :layout => false
 
-- @models.each do |model|
-  = haml :model, :locals=>{:model=>model,:subjectstring=>subjectstring}, :layout => false 
+- if @models
+  - @models.each do |model|
+    = haml :model, :locals=>{:model=>model,:subjectstring=>subjectstring}, :layout => false 

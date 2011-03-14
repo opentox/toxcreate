@@ -192,7 +192,7 @@ post '/models' do # create a new model
   task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
 
     task.progress(5)
-    @model.update :status => "Uploading and saving dataset"
+    @model.update  :task_uri => task.uri, :status => "Uploading and saving dataset"
     begin
       @dataset = OpenTox::Dataset.create(nil, subjectid)
       # check format by extension - not all browsers provide correct content-type]) 
