@@ -18,7 +18,7 @@
           - if (task = OpenTox::Task.exist?(model.task_uri))
             %input{:type => 'hidden', :id => "model_#{model.id}_task", :value => "#{model.task_uri}"}
             - percentage_completed = task.metadata[OT.percentageCompleted].to_i
-            - js = "$('#model_#{model.id}_progress').progressbar({ value: #{percentage_completed} })";
+            - js = "$('#model_#{model.id}_progress').progressbar({ value: #{percentage_completed} });"
             :javascript
               $(function() {
                 #{js}
