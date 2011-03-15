@@ -70,7 +70,7 @@ get '/login' do
 end
 
 get '/models/?' do
-  @models = ToxCreateModel.all#.to_a.reverse
+  @models = ToxCreateModel.all.sort.reverse
   subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
   haml :models, :locals=>{:models=>@models, :subjectstring => subjectstring}
 end
@@ -192,7 +192,7 @@ post '/models' do # create a new model
   task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
 
     task.progress(5)
-    @model.update  :task_uri => task.uri, :status => "Uploading and saving dataset"
+    @model.update :status => "Uploading and saving dataset", :task_uri => task.uri
     begin
       @dataset = OpenTox::Dataset.create(nil, subjectid)
       # check format by extension - not all browsers provide correct content-type]) 
