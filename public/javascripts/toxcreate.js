@@ -111,7 +111,7 @@ $(function() {
 
 });
 
-jQuery.fn.editModel = function(type, options) {
+jQuery.fn.editModel = function(options) {
   var defaults = {
     method: 'get',
     action: this.attr('href'),
@@ -138,7 +138,7 @@ jQuery.fn.editModel = function(type, options) {
   });
 };
 
-jQuery.fn.cancelEdit = function(type, options) {
+jQuery.fn.cancelEdit = function(options) {
   var defaults = {
     method: 'get',
     action: 'model/' + options.id + '/name?mode=show',
@@ -165,7 +165,7 @@ jQuery.fn.cancelEdit = function(type, options) {
   });
 };
 
-jQuery.fn.saveModel = function(type, options) {
+jQuery.fn.saveModel = function(options) {
   var defaults = {
     method: 'put',
     action: 'model/' + options.id,

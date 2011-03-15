@@ -1,5 +1,5 @@
-- js = "$('#cancel_#{model.id}').cancelEdit('GET', {id: '#{model.id}', mode: 'show'});\n  "
-- js += "$('#save_#{model.id}').saveModel('POST', {id: '#{model.id}', mode: 'show'});\n  "
+- js = "$('#cancel_#{model.id}').cancelEdit({id: '#{model.id}', mode: 'show'});\n  "
+- js += "$('#save_#{model.id}').saveModel({id: '#{model.id}', mode: 'show'});\n  "
 :javascript
   $(function() {
     #{js}
