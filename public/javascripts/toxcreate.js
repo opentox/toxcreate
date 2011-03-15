@@ -86,8 +86,6 @@ $(function() {
     });
     return id;
   };    
-  
-  
 
   loadModel = function(id, view) {
     if(id == "") return -1; 
@@ -111,27 +109,6 @@ $(function() {
     return false;
   };
 
-  checkValidation = function() {
-    var reload_id = "";
-    $("input.model_validation_report").each(function(){
-        if(!$(this).val().match(/Completed|Error/)) {
-          reload_id = this.id.replace("model_validation_report_","");
-          if(/^\d+$/.test(reload_id)) loadModel(reload_id, 'validation');
-        };
-    });
-//<<<<<<< HEAD
-    //var validationCheck = setTimeout('checkValidation()',15000);
-    //var validationCheck = setTimeout('checkValidation()',5000);
-//=======
-    $("input.model_validation_qmrf").each(function(){
-        if(!$(this).val().match(/Completed|Error/)) {
-          reload_id = this.id.replace("model_validation_qmrf_","");
-          if(/^\d+$/.test(reload_id)) loadModel(reload_id, 'model');
-        };
-    });
-    var validationCheck = setTimeout('checkValidation()',15000);
-//>>>>>>> d1ad229730f6e6043fe6e7a150e05ffa41e3cec2
-  }
 });
 
 jQuery.fn.editModel = function(type, options) {
@@ -155,6 +132,33 @@ jQuery.fn.editModel = function(type, options) {
          },
          error: function(data) {
            alert("model edit error!");
+         }
+       });
+    return false;
+  });
+};
+
+jQuery.fn.cancelEdit = function(type, options) {
+  var defaults = {
+    method: 'get',
+    action: 'model/' + options.id + '/name?mode=show',
+    trigger_on: 'click'
+  };
+  var opts = $.extend(defaults, options);
+  
+  this.bind(opts.trigger_on, function() { 
+    $.ajax({
+         type: opts.method,
+         url:  opts.action,
+         dataType: 'html',
+         data: {
+           '_method': 'get'
+         },
+         success: function(data) {         
+           $("div#model_" + opts.id + "_name").html(data);
+         },
+         error: function(data) {
+           alert("model cancel error!");
          }
        });
     return false;
