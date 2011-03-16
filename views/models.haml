@@ -10,12 +10,14 @@
   });
 
 -# %p Get an overview about ToxCreate models. This page is refreshed every 15 seconds to update the model status.
-%p Get an overview about ToxCreate models. This page is refreshed every 5 seconds to update the model status.
+%p Get an overview about ToxCreate models. Parts of this page are refreshed every 5 seconds to update the model status.
 
 -# explanations
 = haml :lazar_description, :layout => false
 = haml :classification, :layout => false
 = haml :regression, :layout => false
+= haml :similarity, :layout => false
+= haml :significant_fragments, :layout => false
 
 - @models.each do |model|
   = haml :model, :locals=>{:model=>model,:subjectstring=>subjectstring}, :layout => false 

@@ -1,8 +1,8 @@
-!!!
+!!! 
 %html{:xmlns => "http://www.w3.org/1999/xhtml", "xml:lang" => "en", :lang => "en"}
 
   %head
-    %meta{'http-equiv' => 'Content-Type', :content => 'text/html'}
+    %meta{'http-equiv' => 'Content-Type', :content => 'text/html; charset=UTF-8'}
     %title ToxCreate
     %script{:type => "text/javascript", :src  => "javascripts/jquery.js"}
     %script{:type => "text/javascript", :src  => "javascripts/toxcreate.js"}
@@ -12,7 +12,7 @@
 
   %body
     .logo
-      = image_tag "/ToxCreate_rgb_72.png", :alt => 'ToxCreate', :align => 'right'
+      %img{:src => "ToxCreate_rgb_72.png", :alt => 'ToxCreate', :align => 'right'}/
       %br
       Create and evaluate models to predict toxicity
     .index
@@ -37,7 +37,7 @@
       - if `hostname`.match(/ot-test/)
         .notice 
           This service is for testing purposes only - once a week all models will be deleted. Please send bug reports and feature requests to our 
-          %a{:href => 'http://github.com/helma/opentox-toxmodel/issues'} issue tracker.
+          %a{:href => 'http://github.com/opentox/opentox-toxmodel/issues'} issue tracker.
 
       - if flash[:notice]
         %p
