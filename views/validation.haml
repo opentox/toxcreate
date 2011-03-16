@@ -2,22 +2,16 @@
   %dl{:id => "model_validation_#{model.id}"}
     %dt
       Validation:
-      -# %input{ :id => "model_validation_report_#{model.id}", :type => "hidden", :value => "#{model.validation_report_status}", :class => "model_validation_report" }
     %dd
       %dl
         - if model.validation_report_uri
           %dt Detailed report:
           %dd
             %a{:href => model.validation_report_uri + subjectstring, :target => "_blank"} show
-        %dt Number of predictions
+        %dt Number of predictions:
         %dd= model.nr_predictions.to_s
         - case model.type
         - when "classification"
           = haml :classification_validation, :locals=>{:model=>model}, :layout => false if model.correct_predictions
         - when "regression"
           = haml :regression_validation, :locals=>{:model=>model}, :layout => false     
--# else
-  = image_tag("/snake_transparent.gif") if model.validation_status == "Running"
-  %a{:href => model.validation_task_uri} #{model.validation_status}
-            
-
