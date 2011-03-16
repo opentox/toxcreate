@@ -83,4 +83,5 @@
             %a{:href => File.join(model.validation_qmrf_uri,"editor")} QMRF Editor, 
           %a{:href => "#{model.uri}.yaml#{subjectstring}"} YAML
           %em  (experts, models cannot be represented in Excel)
-      = haml :validation, :locals=>{:model=>model,:subjectstring => subjectstring}, :layout => false     
+
+    = haml :validation, :locals=>{:model=>model,:subjectstring => subjectstring}, :layout => false     
