@@ -32,7 +32,7 @@ helpers do
 
   def is_authorized(uri, action)
     if OpenTox::Authorization.server && session[:subjectid] != nil
-      return OpenTox::Authorization.authorize(uri, action, session[:subjectid])
+      return OpenTox::Authorization.authorized?(uri, action, session[:subjectid])
     else
       return true
     end
