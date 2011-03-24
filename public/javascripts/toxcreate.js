@@ -226,3 +226,15 @@ jQuery.fn.deleteModel = function(type, options) {
      return false;
    });
 };
+
+$(document).ready(function() {
+  $('A[rel="external"]').each(function() {
+    $(this).attr('alt', 'Link opens in new window.');
+    $(this).attr('title', 'Link opens in new window.');
+  });
+  $('A[rel="external"]').click(function() {
+    window.open($(this).attr('href'));
+    return false;
+  });
+});
+
