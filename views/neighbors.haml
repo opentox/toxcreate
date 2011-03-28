@@ -9,7 +9,6 @@
 - first = 5*page
 - last = first+4
 - neighbor_id = 0
--# LOGGER.debug neighbors.to_yaml
 - neighbors.sort{|a,b| b[OT.similarity] <=> a[OT.similarity]}[first..last].each do |neighbor|
   - neighbor_id += 1
   - compound = OpenTox::Compound.new(neighbor[OT.compound])
