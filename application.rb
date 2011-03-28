@@ -70,7 +70,7 @@ get '/login' do
 end
 
 get '/models/?' do
-  @models = ToxCreateModel.all#.to_a.reverse
+  @models = ToxCreateModel.all.sort(:order => "DESC")
   subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
   haml :models, :locals=>{:models=>@models, :subjectstring => subjectstring}
 end
@@ -151,7 +151,7 @@ get '/model/:id/:view/?' do
 end
 
 get '/predict/?' do 
-  @models = ToxCreateModel.all#.to_a.reverse
+  @models = ToxCreateModel.all.sort(:order => "DESC")
   @models = @models.collect{|m| m if m.status == 'Completed'}.compact
   haml :predict
 end
@@ -201,7 +201,9 @@ post '/models' do # create a new model
         csv = params[:file][:tempfile].read
         @dataset.load_csv(csv, subjectid)
       when ".xls", ".xlsx"
-        @dataset.load_spreadsheet(Excel.new params[:file][:tempfile].path, subjectid)
+        excel_file = params[:file][:tempfile].path + File.extname(params[:file][:filename])
+        File.rename(params[:file][:tempfile].path, excel_file) # add extension, spreadsheet does not read files without extensions
+        @dataset.load_spreadsheet(Excel.new excel_file, subjectid)
       else
         error "#{params[:file][:filename]} has a unsupported file type."
       end
