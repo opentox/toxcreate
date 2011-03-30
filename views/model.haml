@@ -28,7 +28,7 @@
               //= haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false        
         - if is_authorized(model.web_uri, "DELETE")
           %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete_link'} 
-            - if model.status == "Completed" 
+            - if model.status =~ /Completed|Error|Cancelled/ 
               (delete)
             - else
               (stop)
