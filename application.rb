@@ -252,7 +252,6 @@ post '/models' do # create a new model
 
         # create summary
         validation.summary(subjectid).each do |k,v|
-          #LOGGER.debug "mr ::: k: #{k.inspect} - v: #{v.inspect}" 
           begin
             eval "@model.update :#{k.to_s} => v" if v
           rescue

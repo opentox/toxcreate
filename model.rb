@@ -49,7 +49,7 @@ class ToxCreateModel < Ohm::Model
   attr_accessor :subjectid
   @subjectid = nil
 
-  #after :save, :check_policy
+  after :save, :check_policy
 
 	def validation_status
 		begin
