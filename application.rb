@@ -245,22 +245,25 @@ post '/models' do # create a new model
     end
     @model.update :type => type, :feature_dataset => lazar.metadata[OT.featureDataset], :uri => lazar.uri
 
-    unless url_for("",:full).match(/localhost/)
+    if url_for("",:full).match(/localhost/)
+      @model.update(:status => "Completed") #, :warnings => @model.warnings + "\nValidation service cannot be accessed from localhost.")
+      task.progress(100)
+    else
       @model.update :status => "Validating model"
       begin
-        validation = OpenTox::Crossvalidation.create(
-          {:algorithm_uri => lazar.metadata[OT.algorithm],
-          :dataset_uri => lazar.parameter("dataset_uri"),
-          :subjectid => subjectid,
-          :prediction_feature => lazar.parameter("prediction_feature"),
-          :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}"},
-         nil, OpenTox::SubTask.new(task,25,80))
+        validation = OpenTox::Crossvalidation.create( {
+            :algorithm_uri => lazar.metadata[OT.algorithm],
+            :dataset_uri => lazar.parameter("dataset_uri"),
+            :subjectid => subjectid,
+            :prediction_feature => lazar.parameter("prediction_feature"),
+            :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}" },
+            nil, OpenTox::SubTask.new(task,25,80))
+
         @model.update(:validation_uri => validation.uri)
         LOGGER.debug "Validation URI: #{@model.validation_uri}"
 
         # create summary
         validation.summary(subjectid).each do |k,v|
-          #LOGGER.debug "mr ::: k: #{k.inspect} - v: #{v.inspect}" 
           begin
             eval "@model.update :#{k.to_s} => v" if v
           rescue
@@ -281,16 +284,9 @@ post '/models' do # create a new model
       end
       
     end
-
-
-    #@model.warnings += "<p>Incorrect Smiles structures (ignored):</p>" + parser.smiles_errors.join("<br/>") unless parser.smiles_errors.empty?
-    #@model.warnings += "<p>Irregular activities (ignored):</p>" + parser.activity_errors.join("<br/>") unless parser.activity_errors.empty?
-    #duplicate_warnings = ''
-    #parser.duplicates.each {|inchi,lines| duplicate_warnings += "<p>#{lines.join('<br/>')}</p>" if lines.size > 1 }
-    #@model.warnings += "<p>Duplicated structures (all structures/activities used for model building, please  make sure, that the results were obtained from <em>independent</em> experiments):</p>" + duplicate_warnings unless duplicate_warnings.empty?
     lazar.uri
   end
-  @model.update(:task_uri => task.uri)
+  @model.update :task_uri => task.uri
 
   flash[:notice] = "Model creation and validation started - this may last up to several hours depending on the number and size of the training compounds."
   redirect url_for('/models')
