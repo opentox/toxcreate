@@ -175,6 +175,12 @@ get %r{/compound/(.*)} do |inchi|
   OpenTox::Compound.from_inchi(inchi).to_names.join(', ')
 end
 
+get '/endpoints' do
+  #@endpoint = params[:endpoint]
+  @endpoints = OpenTox::Ontology::Echa.endpoints#(params[:endpoint])
+  haml :endpoints
+end
+
 post '/models' do # create a new model
   unless params[:file] and params[:file][:tempfile] #params[:endpoint] and 
     flash[:notice] = "Please upload a Excel or CSV file."
