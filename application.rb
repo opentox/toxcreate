@@ -254,7 +254,6 @@ post '/models' do # create a new model
 
         # create summary
         validation.summary(subjectid).each do |k,v|
-          #LOGGER.debug "mr ::: k: #{k.inspect} - v: #{v.inspect}" 
           begin
             eval "@model.update :#{k.to_s} => v" if v
           rescue
@@ -284,7 +283,7 @@ post '/models' do # create a new model
     #@model.warnings += "<p>Duplicated structures (all structures/activities used for model building, please  make sure, that the results were obtained from <em>independent</em> experiments):</p>" + duplicate_warnings unless duplicate_warnings.empty?
     lazar.uri
   end
-  @model.update(:task_uri => task.uri)
+  @model.update :task_uri => task.uri
 
   flash[:notice] = "Model creation and validation started - this may last up to several hours depending on the number and size of the training compounds."
   redirect url_for('/models')
