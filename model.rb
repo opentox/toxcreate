@@ -1,13 +1,20 @@
 require 'ohm'
+require 'ohm/contrib'
+#require 'redis/objects'
+#@@redis = Redis.new(:thread_safe=>true)#(:host => '127.0.0.1', :port => 6379)
 
 class ToxCreateModel < Ohm::Model
+
+  include Ohm::Callbacks
+  include Ohm::Typecast
+  include Ohm::Timestamping  
 
 	attribute :name
 	attribute :warnings
 	attribute :error_messages
 	attribute :type
   attribute :status
-	attribute :created_at
+	attribute :created_at, Date
 
 	attribute :task_uri
 	attribute :uri
@@ -42,7 +49,7 @@ class ToxCreateModel < Ohm::Model
   attr_accessor :subjectid
   @subjectid = nil
 
-  #after :save, :check_policy
+  after :save, :check_policy
 
 	def validation_status
 		begin
