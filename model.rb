@@ -1,7 +1,5 @@
 require 'ohm'
 require 'ohm/contrib'
-#require 'redis/objects'
-#@@redis = Redis.new(:thread_safe=>true)#(:host => '127.0.0.1', :port => 6379)
 
 class ToxCreateModel < Ohm::Model
 
@@ -81,4 +79,3 @@ class ToxCreateModel < Ohm::Model
   end
 
 end
-
