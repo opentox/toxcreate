@@ -175,15 +175,16 @@ get %r{/compound/(.*)} do |inchi|
   OpenTox::Compound.from_inchi(inchi).to_names.join(', ')
 end
 
-get '/endpoints' do
+get '/ambit' do
   #@endpoint = params[:endpoint]
   @endpoints = OpenTox::Ontology::Echa.endpoints#(params[:endpoint])
-  haml :endpoints
+  haml :ambit
 end
 
 post '/models' do # create a new model
-  unless params[:file] and params[:file][:tempfile] #params[:endpoint] and 
-    flash[:notice] = "Please upload a Excel or CSV file."
+
+  unless (params[:dataset] and params[:prediction_feature]) or (params[:file] and params[:file][:tempfile]) #params[:endpoint] and 
+    flash[:notice] = "Please upload a Excel or CSV file or select an AMBIT dataset."
     redirect url_for('/create')
   end
 
@@ -192,46 +193,62 @@ post '/models' do # create a new model
     flash[:notice] = "Please login to create a new model."
     redirect url_for('/create')
   end
+
   subjectid = session[:subjectid] ? session[:subjectid] : nil
+
+  if params[:dataset] and params[:prediction_feature]
+    @dataset = OpenTox::Dataset.new(params[:dataset])
+    name = @dataset.load_metadata[DC.title]
+    @prediction_feature = params[:prediction_feature]
+  elsif params[:file][:filename]
+    name = params[:file][:filename].sub(/\..*$/,"")
+  end
+
   @model = ToxCreateModel.create(:name => params[:file][:filename].sub(/\..*$/,""), :subjectid => subjectid)
   @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
   task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
 
     task.progress(5)
     @model.update :status => "Uploading and saving dataset", :task_uri => task.uri
-    begin
-      @dataset = OpenTox::Dataset.create(nil, subjectid)
-      # check format by extension - not all browsers provide correct content-type]) 
-      case File.extname(params[:file][:filename])
-      when ".csv"
-        csv = params[:file][:tempfile].read
-        @dataset.load_csv(csv, subjectid)
-      when ".xls", ".xlsx"
-        excel_file = params[:file][:tempfile].path + File.extname(params[:file][:filename])
-        File.rename(params[:file][:tempfile].path, excel_file) # add extension, spreadsheet does not read files without extensions
-        @dataset.load_spreadsheet(Excel.new excel_file, subjectid)
-      else
-        error "#{params[:file][:filename]} has a unsupported file type."
+
+    unless params[:dataset]
+      begin
+        @dataset = OpenTox::Dataset.create(nil, subjectid)
+        # check format by extension - not all browsers provide correct content-type]) 
+        case File.extname(params[:file][:filename])
+        when ".csv"
+          csv = params[:file][:tempfile].read
+          @dataset.load_csv(csv, subjectid)
+        when ".xls", ".xlsx"
+          excel_file = params[:file][:tempfile].path + File.extname(params[:file][:filename])
+          File.rename(params[:file][:tempfile].path, excel_file) # add extension, spreadsheet does not read files without extensions
+          @dataset.load_spreadsheet(Excel.new excel_file, subjectid)
+          if @dataset.metadata[OT.Errors]
+            error "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} formats."
+          end
+        else
+          error "#{params[:file][:filename]} has a unsupported file type."
+        end
+        if @dataset.features.keys.size != 1
+          error "More than one feature in dataset #{params[:file][:filename]}. Please delete irrelvant columns and try again."
+        else
+          @prediction_feature = @dataset.features.keys.first
+        end
+        @dataset.save(subjectid)
+      rescue => e
+        error "Dataset creation failed with #{e.message}"
       end
-    rescue => e
-      error "Dataset creation failed with #{e.message}"
     end
-    @dataset.save(subjectid)
+
     task.progress(10)
     if @dataset.compounds.size < 10
       error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/excel_format"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."
-    end
-    if @dataset.features.keys.size != 1
-      error "More than one feature in dataset #{params[:file][:filename]}. Please delete irrelvant columns and try again."
-    end
-    if @dataset.metadata[OT.Errors]
-      error "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} formats."
     end
     @model.update :training_dataset => @dataset.uri, :nr_compounds => @dataset.compounds.size, :status => "Creating prediction model"
     @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings].empty?
     task.progress(15)
     begin
-      lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :subjectid => subjectid)
+      lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :prediction_feature => @prediction_feature, :subjectid => subjectid)
     rescue => e
       error "Model creation failed with '#{e.message}'. Please check if the input file is in a valid #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} format."
     end
@@ -245,10 +262,7 @@ post '/models' do # create a new model
     end
     @model.update :type => type, :feature_dataset => lazar.metadata[OT.featureDataset], :uri => lazar.uri
 
-    if url_for("",:full).match(/localhost/)
-      @model.update(:status => "Completed") #, :warnings => @model.warnings + "\nValidation service cannot be accessed from localhost.")
-      task.progress(100)
-    else
+    if CONFIG[:services]["opentox-validation"]
       @model.update :status => "Validating model"
       begin
         validation = OpenTox::Crossvalidation.create( {
@@ -283,6 +297,9 @@ post '/models' do # create a new model
         @model.update :warnings => @model.warnings + "\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
       end
       
+    else
+      @model.update(:status => "Completed") #, :warnings => @model.warnings + "\nValidation service cannot be accessed from localhost.")
+      task.progress(100)
     end
     lazar.uri
   end
