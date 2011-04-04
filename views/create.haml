@@ -17,18 +17,24 @@
     = link_to "instructions for creating training datasets", '/help'
     before submitting.
 
+
   %form{ :action => url_for('/models'), :method => "post", :enctype => "multipart/form-data" }
     %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
     %fieldset
       %label{:for => 'file'}
-        Select training data in
+        Upload training data in
         = link_to "Excel", '/help'
         or
         = link_to "CSV", '/help'
         format:
       %input{:type => 'file', :name => 'file', :id => 'file', :size => '41'}
     %input{ :type => "submit", :value => "Create model"}
-    = link_to "Cancel", '/create'
+    =# link_to "Cancel", '/create'
+
+  %p
+    or
+    %a{:href => "echa"} Select a AMBIT dataset
+    (experimental)
 
   -# explanations
   = haml :lazar_description, :layout => false

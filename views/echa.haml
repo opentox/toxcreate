@@ -1,0 +1,13 @@
+%b Select:
+%b ECHA Endpoint
+%em= "-&gt; Dataset -&gt; Prediction Feature"
+
+%form{ :action => url_for('/ambit'), :method => "post" }
+  %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
+
+  - @endpoints.each do |endpoint|
+    %br
+      %input{:type=>'radio', :name => "endpoint", :value => endpoint} #{endpoint.split('#').last}
+
+  %p
+    %input{:type => 'submit', :value => "Next"}
