@@ -1,0 +1,26 @@
+%b Select:
+= session[:echa].split('#').last
+= "-&gt;"
+= OpenTox::Dataset.new(session[:dataset]).load_metadata[DC.title]
+= "-&gt;"
+%b Prediction feature
+
+%form{ :action => url_for('/models'), :method => "post" }
+
+  %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
+  %input{:type => 'hidden', :name => 'dataset', :id => 'dataset', :value => session[:dataset]}
+
+  - @features.each do |feature|
+    -# type = "unknown"
+    -# if feature.metadata[RDF.type].include?(OT.NominalFeature)
+      - type = "classification"
+    -# elsif feature.metadata[RDF.type].include?(OT.NumericFeature)
+      - type = "regression"
+
+    %br
+      %input{:type=>'radio', :name => "prediction_feature", :value => feature.uri} #{feature.metadata[DC.title]} (#{feature.feature_type}) 
+    %br
+      =# feature.inspect
+
+  %p
+    %input{:type => 'submit', :value => "Create model"}
