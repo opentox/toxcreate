@@ -225,7 +225,7 @@ post '/models' do # create a new model
     @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings].empty?
     task.progress(15)
     begin
-      lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :subjectid => subjectid)
+      lazar = OpenTox::Model::Lazar.create({:dataset_uri => @dataset.uri, :subjectid => subjectid})
     rescue => e
       error "Model creation failed with '#{e.message}'. Please check if the input file is in a valid #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} format."
     end
