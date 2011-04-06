@@ -56,7 +56,7 @@ helpers do
 end
 
 before do
-    if !logged_in and !( env['REQUEST_URI'] =~ /\/login$/ and env['REQUEST_METHOD'] == "POST" ) #or !AA_SERVER
+    if !logged_in and !( env['REQUEST_URI'] =~ /\/login$/ and env['REQUEST_METHOD'] == "POST" ) or !AA_SERVER
       login("guest","guest")
     end
 end
@@ -175,9 +175,30 @@ get %r{/compound/(.*)} do |inchi|
   OpenTox::Compound.from_inchi(inchi).to_names.join(', ')
 end
 
+get '/echa' do
+  @endpoints = OpenTox::Ontology::Echa.endpoints
+  haml :echa
+end
+
+post '/ambit' do
+  session[:echa] = params[:endpoint]
+  @datasets  = OpenTox::Ontology::Echa.datasets(params[:endpoint])
+  haml :ambit
+end
+
+post '/feature' do
+  session[:dataset] = params[:dataset]
+  @features = []
+  OpenTox::Dataset.new(params[:dataset]).load_features.each do |uri,metadata|
+    @features << OpenTox::Feature.find(uri) if metadata[OWL.sameAs].match(/#{session[:echa]}/)
+  end
+  haml :feature
+end
+
 post '/models' do # create a new model
-  unless params[:file] and params[:file][:tempfile] #params[:endpoint] and 
-    flash[:notice] = "Please upload a Excel or CSV file."
+
+  unless (params[:dataset] and params[:prediction_feature]) or (params[:file] and params[:file][:tempfile]) #params[:endpoint] and 
+    flash[:notice] = "Please upload a Excel or CSV file or select an AMBIT dataset."
     redirect url_for('/create')
   end
 
@@ -186,69 +207,88 @@ post '/models' do # create a new model
     flash[:notice] = "Please login to create a new model."
     redirect url_for('/create')
   end
+
   subjectid = session[:subjectid] ? session[:subjectid] : nil
-  @model = ToxCreateModel.create(:name => params[:file][:filename].sub(/\..*$/,""), :subjectid => subjectid)
+
+  if params[:dataset] and params[:prediction_feature]
+    @dataset = OpenTox::Dataset.new(params[:dataset],subjectid)
+    name = @dataset.load_metadata[DC.title]
+    @prediction_feature = OpenTox::Feature.find params[:prediction_feature], subjectid
+    @dataset.load_compounds
+  elsif params[:file][:filename]
+    name = params[:file][:filename].sub(/\..*$/,"")
+  end
+
+  @model = ToxCreateModel.create(:name => name, :subjectid => subjectid)
   @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
   task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
 
     task.progress(5)
     @model.update :status => "Uploading and saving dataset", :task_uri => task.uri
-    begin
-      @dataset = OpenTox::Dataset.create(nil, subjectid)
-      # check format by extension - not all browsers provide correct content-type]) 
-      case File.extname(params[:file][:filename])
-      when ".csv"
-        csv = params[:file][:tempfile].read
-        @dataset.load_csv(csv, subjectid)
-      when ".xls", ".xlsx"
-        excel_file = params[:file][:tempfile].path + File.extname(params[:file][:filename])
-        File.rename(params[:file][:tempfile].path, excel_file) # add extension, spreadsheet does not read files without extensions
-        @dataset.load_spreadsheet(Excel.new excel_file, subjectid)
-      else
-        error "#{params[:file][:filename]} has a unsupported file type."
+
+    unless params[:dataset] and params[:prediction_feature]
+      begin
+        @dataset = OpenTox::Dataset.create(nil, subjectid)
+        # check format by extension - not all browsers provide correct content-type]) 
+        case File.extname(params[:file][:filename])
+        when ".csv"
+          csv = params[:file][:tempfile].read
+          @dataset.load_csv(csv, subjectid)
+        when ".xls", ".xlsx"
+          excel_file = params[:file][:tempfile].path + File.extname(params[:file][:filename])
+          File.rename(params[:file][:tempfile].path, excel_file) # add extension, spreadsheet does not read files without extensions
+          @dataset.load_spreadsheet(Excel.new excel_file, subjectid)
+          if @dataset.metadata[OT.Errors]
+            error "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} formats."
+          end
+        else
+          error "#{params[:file][:filename]} has a unsupported file type."
+        end
+        @dataset.save(subjectid)
+      rescue => e
+        error "Dataset creation failed with #{e.message}"
       end
-    rescue => e
-      error "Dataset creation failed with #{e.message}"
+      if @dataset.features.keys.size != 1
+        error "More than one feature in dataset #{params[:file][:filename]}. Please delete irrelvant columns and try again."
+      else
+        @prediction_feature = OpenTox::Feature.find(@dataset.features.keys.first,subjectid)
+      end
     end
-    @dataset.save(subjectid)
+
     task.progress(10)
     if @dataset.compounds.size < 10
       error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/excel_format"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."
     end
-    if @dataset.features.keys.size != 1
-      error "More than one feature in dataset #{params[:file][:filename]}. Please delete irrelvant columns and try again."
-    end
-    if @dataset.metadata[OT.Errors]
-      error "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} formats."
-    end
     @model.update :training_dataset => @dataset.uri, :nr_compounds => @dataset.compounds.size, :status => "Creating prediction model"
-    @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings].empty?
+    @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings] and @dataset.metadata[OT.Warnings].empty?
     task.progress(15)
     begin
-      lazar = OpenTox::Model::Lazar.create({:dataset_uri => @dataset.uri, :subjectid => subjectid})
+      lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :prediction_feature => @prediction_feature.uri, :subjectid => subjectid)
     rescue => e
-      error "Model creation failed with '#{e.message}'. Please check if the input file is in a valid #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} format."
+      error "Model creation failed with '#{e.message}'."# Please check if the input file is in a valid #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} format."
     end
     task.progress(25)
+=begin
     type = "unknown"
-    case lazar.metadata[OT.isA]
-    when /Classification/
+    if lazar.metadata[RDF.type].grep(/Classification/)
       type = "classification"
-    when /Regression/
+    elsif lazar.metadata[RDF.type].grep(/Regression/)
       type = "regression"
     end
-    @model.update :type => type, :feature_dataset => lazar.metadata[OT.featureDataset], :uri => lazar.uri
+=end
+    @model.update :type => @prediction_feature.feature_type, :feature_dataset => lazar.metadata[OT.featureDataset], :uri => lazar.uri
 
-    unless url_for("",:full).match(/localhost/)
+    if CONFIG[:services]["opentox-validation"]
       @model.update :status => "Validating model"
       begin
-        validation = OpenTox::Crossvalidation.create(
-          {:algorithm_uri => lazar.metadata[OT.algorithm],
-          :dataset_uri => lazar.parameter("dataset_uri"),
-          :subjectid => subjectid,
-          :prediction_feature => lazar.parameter("prediction_feature"),
-          :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}"},
-         nil, OpenTox::SubTask.new(task,25,80))
+        validation = OpenTox::Crossvalidation.create( {
+            :algorithm_uri => lazar.metadata[OT.algorithm],
+            :dataset_uri => lazar.parameter("dataset_uri"),
+            :subjectid => subjectid,
+            :prediction_feature => lazar.parameter("prediction_feature"),
+            :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}" },
+            nil, OpenTox::SubTask.new(task,25,80))
+
         @model.update(:validation_uri => validation.uri)
         LOGGER.debug "Validation URI: #{@model.validation_uri}"
 
@@ -273,14 +313,10 @@ post '/models' do # create a new model
         @model.update :warnings => @model.warnings + "\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
       end
       
+    else
+      @model.update(:status => "Completed") #, :warnings => @model.warnings + "\nValidation service cannot be accessed from localhost.")
+      task.progress(100)
     end
-
-
-    #@model.warnings += "<p>Incorrect Smiles structures (ignored):</p>" + parser.smiles_errors.join("<br/>") unless parser.smiles_errors.empty?
-    #@model.warnings += "<p>Irregular activities (ignored):</p>" + parser.activity_errors.join("<br/>") unless parser.activity_errors.empty?
-    #duplicate_warnings = ''
-    #parser.duplicates.each {|inchi,lines| duplicate_warnings += "<p>#{lines.join('<br/>')}</p>" if lines.size > 1 }
-    #@model.warnings += "<p>Duplicated structures (all structures/activities used for model building, please  make sure, that the results were obtained from <em>independent</em> experiments):</p>" + duplicate_warnings unless duplicate_warnings.empty?
     lazar.uri
   end
   @model.update :task_uri => task.uri

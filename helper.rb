@@ -3,7 +3,7 @@ helpers do
   def login(username, password)
     logout
     session[:subjectid] = OpenTox::Authorization.authenticate(username, password)
-    LOGGER.debug "ToxCreate login user #{username} with subjectid: " + session[:subjectid].to_s
+    #LOGGER.debug "ToxCreate login user #{username} with subjectid: " + session[:subjectid].to_s
     if session[:subjectid] != nil
       session[:username] = username
       return true
@@ -53,8 +53,7 @@ helpers do
 
   def sort(descriptors)
     features = {:activating => [], :deactivating => []}
-
-    descriptors.each { |d| LOGGER.debug d.inspect; features[d[OT.effect].to_sym] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} }
+    descriptors.each { |d| features[d[OT.effect].to_sym] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} }
     features
   end
 
