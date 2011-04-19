@@ -1,9 +1,9 @@
 %dt
   %a{:href => "http://en.wikipedia.org/wiki/R-squared"} R-squared
-%dd= sprintf '%.03g', model.r_square
+%dd= sprintf '%.03g', model.r_square.to_f
 %dt
   %a{:href => "http://en.wikipedia.org/wiki/Root_mean_square_deviation"} Root Mean Square Error
-%dd= sprintf '%.03g', model.root_mean_squared_error
+%dd= sprintf '%.03g', model.root_mean_squared_error.to_f
 %dt
   %a{:href => "http://en.wikipedia.org/wiki/Mean_absolute_error"} Mean Absolute Error
-%dd= sprintf '%.03g', model.mean_absolute_error
+%dd= sprintf '%.03g', model.mean_absolute_error.to_f
