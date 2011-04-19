@@ -190,7 +190,7 @@ post '/feature' do
   session[:dataset] = params[:dataset]
   @features = []
   OpenTox::Dataset.new(params[:dataset]).load_features.each do |uri,metadata|
-    @features << OpenTox::Feature.find(uri) if metadata[OWL.sameAs].match(/#{session[:echa]}/)
+    @features << OpenTox::Feature.find(uri, @subjectid) if metadata[OWL.sameAs].match(/#{session[:echa]}/)
   end
   haml :feature
 end
@@ -356,7 +356,7 @@ post '/predict/?' do # post chemical name to model
       }
     else
       predicted_feature = prediction_dataset.metadata[OT.dependentVariables]
-      prediction = OpenTox::Feature.find(predicted_feature)
+      prediction = OpenTox::Feature.find(predicted_feature, subjectid)
       if prediction.metadata[OT.error]
         @predictions << {
           :title => model.name,
@@ -382,7 +382,7 @@ post "/lazar/?" do # get detailed prediction
   @page = params[:page].to_i if params[:page]
   @model_uri = params[:model_uri]
   lazar = OpenTox::Model::Lazar.new @model_uri
-  prediction_dataset_uri = lazar.run(:compound_uri => params[:compound_uri], :subjectid => params[:subjectid])
+  prediction_dataset_uri = lazar.run(:compound_uri => params[:compound_uri], :subjectid => session[:subjectid])
   @prediction = OpenTox::LazarPrediction.find(prediction_dataset_uri, session[:subjectid])
   @compound = OpenTox::Compound.new(params[:compound_uri])
   haml :lazar
