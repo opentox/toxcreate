@@ -239,7 +239,7 @@ post '/models' do # create a new model
           File.rename(params[:file][:tempfile].path, excel_file) # add extension, spreadsheet does not read files without extensions
           @dataset.load_spreadsheet(Excel.new excel_file, subjectid)
           if @dataset.metadata[OT.Errors]
-            error "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} formats."
+            error "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} formats."
           end
         else
           error "#{params[:file][:filename]} has a unsupported file type."
