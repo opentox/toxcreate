@@ -257,7 +257,7 @@ post '/models' do # create a new model
 
     task.progress(10)
     if @dataset.compounds.size < 10
-      error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/excel_format"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."
+      error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/help"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."
     end
     @model.update :training_dataset => @dataset.uri, :nr_compounds => @dataset.compounds.size, :status => "Creating prediction model"
     @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings] and @dataset.metadata[OT.Warnings].empty?
@@ -265,7 +265,7 @@ post '/models' do # create a new model
     begin
       lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :prediction_feature => @prediction_feature.uri, :subjectid => subjectid)
     rescue => e
-      error "Model creation failed with '#{e.message}'."# Please check if the input file is in a valid #{link_to "Excel", "/excel_format"} or #{link_to "CSV", "/csv_format"} format."
+      error "Model creation failed with '#{e.message}'."# Please check if the input file is in a valid #{link_to "Excel", "/help"} or #{link_to "CSV", "/csv_format"} format."
     end
     task.progress(25)
 =begin
