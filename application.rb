@@ -265,7 +265,7 @@ post '/models' do # create a new model
     begin
       lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :prediction_feature => @prediction_feature.uri, :subjectid => subjectid)
     rescue => e
-      error "Model creation failed with '#{e.message}'."# Please check if the input file is in a valid #{link_to "Excel", "/help"} or #{link_to "CSV", "/csv_format"} format."
+      error "Model creation failed with '#{e.message}'."# Please check if the input file is in a valid #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} format."
     end
     task.progress(25)
 =begin
