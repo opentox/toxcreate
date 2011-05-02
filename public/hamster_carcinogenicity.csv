@@ -1,3 +1,4 @@
+SMILES, hamster_carcinogenicity
 CC=O,1
 C12C3=C(C=CC=C3)CC1=CC(=CC=2)NC(C)=O,1
 O=C(N)\C(C2=CC=CO2)=C/C1=CC=C([N+]([O-])=O)O1,1
