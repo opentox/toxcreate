@@ -27,7 +27,7 @@ helpers do
   private 
   def delete_model(model, subjectid=nil)
     task = OpenTox::Task.create("Deleting model: #{model.uri}",url_for("/delete",:full)) do |task|
-      begin RestClient.put(File.join(model.task_uri, 'Cancelled'),subjectid) if model.task_uri rescue LOGGER.warn "Cannot cancel task #{model.task_uri}" end
+      begin OpenTox::RestClientWrapper.put(File.join(model.task_uri, "Cancelled"), "Cancelled",{:subjectid => subjectid}) if model.task_uri rescue LOGGER.warn "Cannot cancel task #{model.task_uri}" end
       task.progress(15)
       delete_dependent(model.uri, subjectid) if model.uri
       task.progress(30)
