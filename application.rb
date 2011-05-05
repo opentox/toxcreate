@@ -37,9 +37,13 @@ helpers do
       task.progress(60)
       delete_dependent(model.validation_qmrf_uri, subjectid) if model.validation_qmrf_uri
       task.progress(75)
-      delete_dependent(model.training_dataset, subjectid) if model.training_dataset
+      if model.training_dataset
+        delete_dependent(model.training_dataset, subjectid) if model.training_dataset.match(CONFIG[:services]["opentox-dataset"])
+      end 
       task.progress(90)
-      delete_dependent(model.feature_dataset, subjectid) if model.feature_dataset
+      if model.feature_dataset
+        delete_dependent(model.feature_dataset, subjectid) if model.feature_dataset.match(CONFIG[:services]["opentox-dataset"])
+      end
       task.progress(100)
       ""
     end
