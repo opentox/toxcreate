@@ -38,8 +38,7 @@
             -# %li
               %a{:href => "http://ambit.uni-plovdiv.bg:8080/ambit2/query/structure/?search=#{@compound.smiles}", :rel => "external"} Ambit data
             -# %li
-              %a{:href => "http://www.ncbi.nlm.nih.gov/sites/entrez?cmd=PureSearch&db=pccompound&term=#{URI.encode('"'+@compound.inchi+'"[InChI]')}", :rel => "external"}  PubChem data
-                (external)
+              %a{:href => "http://www.ncbi.nlm.nih.gov/sites/entrez?cmd=PureSearch&db=pccompound&term=#{URI.encode('"'+@compound.inchi+'"[InChI]')}", :rel => "external"}  PubChem data (external)
             -# %li
               %a{:href => "http://chem.sis.nlm.nih.gov/chemidplus/direct.jsp?result=advanced&inchi=#{URI.encode @compound.inchi}", :rel => "external"} ToxNet data
             -#http://chem.sis.nlm.nih.gov/chemidplus/direct.jsp?result=advanced&regno=000143157
