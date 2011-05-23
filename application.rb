@@ -1,7 +1,7 @@
 ['rubygems', "haml", "sass", "rack-flash"].each do |lib|
   require lib
 end
-gem "opentox-ruby", "~> 1"
+gem "opentox-ruby", "~> 2"
 require 'opentox-ruby'
 gem 'sinatra-static-assets'
 require 'sinatra/static_assets'
@@ -370,8 +370,8 @@ post '/predict/?' do # post chemical name to model
         @predictions << {
           :title => model.name,
           :model_uri => model.uri,
-          :prediction => prediction.metadata[OT.prediction],
-          :confidence => prediction.metadata[OT.confidence]
+          :prediction => prediction_dataset.value(@compound),
+          :confidence => prediction_dataset.confidence(@compound)
           }
       end
     end
