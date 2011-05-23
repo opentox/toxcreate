@@ -18,6 +18,9 @@ body
     color: $ot_purple
   a:hover
     color: black
+  a[rel="external"]
+    background: transparent url('../external.gif') center right no-repeat
+    padding-right: 15px
 
   .headline
     .logo
@@ -90,6 +93,7 @@ body
           font-weight: bold
           color: $fg_color
         label
+          cursor: pointer
           //width: 28em
           //display: block
           //float: left
@@ -127,7 +131,9 @@ body
           padding: 0.5em
         img
           padding: 0
-          height: 100%
+          //height: 100%
+          width: 150px
+          height: 150px
 
     .lazar-predictions
       clear: both

@@ -17,7 +17,7 @@
       Create and evaluate models to predict toxicity
     .index
       %ul
-        %li{:class => ("selected" if /\/create/ =~ request.path )}
+        %li{:class => ("selected" if /\/create|echa|ambit|feature/ =~ request.path )}
           = link_to "Create", "/create"
         %li{:class => ("selected" if /models/ =~ request.path )}
           = link_to "Inspect", "/models"
@@ -37,7 +37,7 @@
       - if `hostname`.match(/ot-test/)
         .notice 
           This service is for testing purposes only - once a week all models will be deleted. Please send bug reports and feature requests to our 
-          %a{:href => 'http://github.com/opentox/toxcreate/issues'} issue tracker.
+          %a{:href => 'http://github.com/opentox/toxcreate/issues', :rel => "external"} issue tracker.
 
       - if flash[:notice]
         %p
@@ -48,6 +48,6 @@
 
     .footer
       &copy;
-      %a{:href => 'http://www.in-silico.ch'} in silico toxicology
-      2009-2010, powered by
-      %a{:href => 'http://www.opentox.org'} <span style="color:#5D308A;font-family:arial,sans-serif,helvetica;letter-spacing:-1px;">Open</span><span style="color:#000;font-family:arial,sans-serif,helvetica;font-weight:bold;letter-spacing:-1px;position:relative;">Tox</span>
+      %a{:href => 'http://www.in-silico.ch', :rel => "external"} in silico toxicology
+      2009-2011, powered by
+      %a{:href => 'http://www.opentox.org', :rel => "external"} <span style="color:#5D308A;font-family:arial,sans-serif,helvetica;letter-spacing:-1px;">Open</span><span style="color:#000;font-family:arial,sans-serif,helvetica;font-weight:bold;letter-spacing:-1px;">Tox</span>

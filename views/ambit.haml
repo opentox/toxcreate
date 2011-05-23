@@ -1,0 +1,15 @@
+%b Select:
+= session[:echa].split('#').last
+= "-&gt;"
+%b Dataset 
+%em= "-&gt; Prediction Feature"
+
+%form{ :action => url_for('/feature'), :method => "post" }
+  %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
+
+  - @datasets.each do |dataset|
+    %br
+      %input{:type=>'radio', :name => "dataset", :value => dataset} #{OpenTox::Dataset.new(dataset).load_metadata[DC.title]}
+
+  %p
+    %input{:type => 'submit', :value => 'Next'}

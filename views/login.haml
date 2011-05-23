@@ -7,15 +7,15 @@
       and your models can be modified or deleted by other guests.
       To control models permissions you can
       log in with your
-      %a{:href => "http://www.opentox.org"} OpenTox
-      username/password below. If have no 
-      %a{:href => "http://www.opentox.org"} OpenTox
-      account yet you can 
-      %a{:href => "http://www.opentox.org/join_form"} register here.
+      %a{:href => "http://www.opentox.org", :rel => "external"} OpenTox
+      username/password below. If you don't have an
+      %a{:href => "http://www.opentox.org", :rel => "external"} OpenTox
+      account yet you could  
+      %a{:href => "http://www.opentox.org/join_form", :rel => "external"} register here.
   - else
     %p
       Change
-      %a{:href => "http://www.opentox.org"} OpenTox
+      %a{:href => "http://www.opentox.org", :rel => "external"} OpenTox
       account:
 
   -# if !logged_in()
@@ -33,15 +33,5 @@
     %form{ :action => url_for('/login'), :method => "post" }
       %input{:type => 'hidden', :name => 'username', :id => 'username', :value => "guest"}
       %input{:type => 'hidden', :name => 'password', :id => 'password', :value => "guest"}
-      %input{ :type => "submit", :value => "Login as guest"}
-  -# else
-    %form{ :action => url_for('/logout'), :method => "post" }
-      -#%p 
-        You are logged in as: 
-        %b= session[:username]
-        -# if LOGGER.level == Logger::DEBUG        
-          %br
-          = session[:subjectid]
-      %input{ :type => "submit", :value => "Switch user"} 
-      = link_to "Cancel", '/login'
-      
+      %input{:type => "submit", :value => "Login as guest"}
+
