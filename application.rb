@@ -366,6 +366,11 @@ post '/predict/?' do # post chemical name to model
           :title => model.name,
           :error => prediction.metadata[OT.error]
           }
+      elsif prediction_dataset.value(@compound).nil?
+        @predictions << {
+          :title => model.name,
+          :error => "Not enough similar compounds in training dataset."
+          }
       else
         @predictions << {
           :title => model.name,
