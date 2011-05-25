@@ -314,7 +314,7 @@ post '/models' do # create a new model
       rescue => e
         LOGGER.debug "Model validation failed with #{e.message}."
         @model.save # to avoid dirty models
-        @model.update :warnings => @model.warnings + "\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
+        @model.update :warnings => @model.warnings.to_s+"\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
       end
       
     else
