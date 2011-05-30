@@ -350,7 +350,7 @@ post '/predict/?' do # post chemical name to model
     confidence = nil
     title = nil
     db_activities = []
-    lazar = OpenTox::Model::Lazar.find model.uri, subjectid
+    lazar = OpenTox::Model::Lazar.new model.uri
     prediction_dataset_uri = lazar.run({:compound_uri => @compound.uri, :subjectid => subjectid})
     prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri, subjectid)
     if prediction_dataset.metadata[OT.hasSource].match(/dataset/)
