@@ -85,8 +85,14 @@
       %td 0 
 
 %p
-  Excel example file for download:
-  = link_to "hamster_carcinogenicity.xls", "/hamster_carcinogenicity.xls"
+  Excel examples for download:
+  %ul
+    %li
+      = link_to "hamster_carcinogenicity.xls", "/hamster_carcinogenicity.xls"
+      (classification)
+    %li
+      = link_to "EPAFHM.xls", "/EPAFHM.xls"
+      (regression)
 
 %h3 CSV example
 
@@ -104,7 +110,13 @@
     %br CN1CCCC1c2cccnc2, 0 
 
 %p
-  CSV example for download:
-  = link_to "hamster_carcinogenicity.csv", "/hamster_carcinogenicity.csv"
+  CSV examples for download:
+  %ul
+    %li
+      = link_to "hamster_carcinogenicity.csv", "/hamster_carcinogenicity.csv"
+      (classification)
+    %li
+      = link_to "EPAFHM.csv", "/EPAFHM.csv"
+      (regression)
 
 %p You can create CSV files in Excel: Create a sheet with two columns and export them as CSV file with the "Save As" option from the menu, selecting the CSV (comma delimited) format.
