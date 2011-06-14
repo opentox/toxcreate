@@ -66,8 +66,15 @@ helpers do
     when /Float/
       haml ".other #{sprintf('%.03g', activity)}", :layout => false
     when /String/
-      haml ".other #{activity.to_s}", :layout => false
-    else
+      case activity
+      when "true"
+        haml ".active active", :layout => false
+      when "false"
+        haml ".inactive inactive", :layout => false
+      else
+        haml ".other #{activity.to_s}", :layout => false
+      end
+    else 
       if activity #true
         haml ".active active", :layout => false
       elsif !activity # false
