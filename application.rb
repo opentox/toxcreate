@@ -338,7 +338,7 @@ post '/predict/?' do # post chemical name to model
     redirect url_for('/predict')
   end
   begin
-    @compound = OpenTox::Compound.from_name(params[:identifier])
+    @compound = OpenTox::Compound.from_smiles(params[:identifier])
   rescue
     flash[:notice] = "Could not find a structure for '#{@identifier}'. Please try again."
     redirect url_for('/predict')
