@@ -36,7 +36,7 @@
           %br
         
       %dt Started:
-      %dd= Time.parse(model.created_at.to_s).strftime("%m/%d/%Y - %I:%M:%S%p GMT") if model.created_at
+      %dd= Time.parse(model.created_at.to_s).strftime("%m/%d/%Y - %I:%M:%S%p %Z") if model.created_at
       - if model.nr_compounds
         %dt Training compounds:
         %dd= model.nr_compounds 
