@@ -21,3 +21,5 @@
 - if @models
   - @models.each do |model|
     = haml :model, :locals=>{:model=>model,:subjectstring=>subjectstring}, :layout => false 
+-if @models.size == 0 
+  .notice There are currently no models. You have to create a model first.
