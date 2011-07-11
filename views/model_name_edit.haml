@@ -8,6 +8,20 @@
   %input{:type => 'text', :name => 'name', :id => "model_#{model.id}_name", :class => 'input_model_name', :size => '40', :value => model.name}
   %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
   %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
-  %input{ :type => "submit", :value => "Save", :id => "save_#{model.id}", :class => "edit_button"}
-  %span{:class => "edit_button"}      
+  %input{:type => "submit", :value => "Save", :id => "save_#{model.id}", :class => "edit_button_h2"}
+  %span{:class => "edit_button_h2"}
     %a{:href => "#", :id => "cancel_#{model.id}"} Cancel
+    
+%div{:id => "model_#{model.id}_policy_edit"}
+  - if is_authorized(model.web_uri, "PUT")
+    - js = "$('#edit_#{model.id}').editPolicy({id: '#{model.id}', mode: 'edit'});\n  "
+    :javascript
+      $(function() {
+        #{js}
+      });    
+     
+    %span{:class => "manage_button"}      
+      [
+      %a{:href => url_for("/model/#{model.id}/name?mode=manage"), :id => "edit_#{model.id}"} manage policy
+      ]
+    
