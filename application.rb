@@ -17,11 +17,16 @@ set :lock, true
 
 helpers do 
 
-  def error(message)
+  # message will be displayed to the user
+  # error will be raised -> taks will be set to error -> error details available via task-uri
+  def error(message, error=nil)
     LOGGER.error message
     @model.update :status => "Error", :error_messages => message
-    flash[:notice] = message
-    redirect url_for('/create')
+    if error
+      raise error
+    else
+      raise message
+    end
   end
 
   private 
@@ -75,6 +80,7 @@ end
 
 get '/models/?' do
   @models = ToxCreateModel.all.sort(:order => "DESC")
+  @models.each{|m| raise "internal redis error: model is nil" unless m}
   subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
   haml :models, :locals=>{:models=>@models, :subjectstring => subjectstring}
 end
@@ -225,7 +231,7 @@ post '/models' do # create a new model
 
   @model = ToxCreateModel.create(:name => name, :subjectid => subjectid)
   @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
-  task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
+  task = OpenTox::Task.create("Toxcreate Task - Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
 
     task.progress(5)
     @model.update :status => "Uploading and saving dataset", :task_uri => task.uri
@@ -243,14 +249,14 @@ post '/models' do # create a new model
           File.rename(params[:file][:tempfile].path, excel_file) # add extension, spreadsheet does not read files without extensions
           @dataset.load_spreadsheet(Excel.new excel_file, subjectid)
           if @dataset.metadata[OT.Errors]
-            error "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} formats."
+            raise "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} formats."
           end
         else
-          error "#{params[:file][:filename]} has a unsupported file type."
+          raise "#{params[:file][:filename]} has an unsupported file type."
         end
         @dataset.save(subjectid)
       rescue => e
-        error "Dataset creation failed with #{e.message}"
+        error "Dataset creation failed '#{e.message}'",e
       end
       if @dataset.features.keys.size != 1
         error "More than one feature in dataset #{params[:file][:filename]}. Please delete irrelvant columns and try again."
@@ -267,11 +273,11 @@ post '/models' do # create a new model
     @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings] and @dataset.metadata[OT.Warnings].empty?
     task.progress(15)
     begin
-      lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :prediction_feature => @prediction_feature.uri, :subjectid => subjectid)
+      lazar = OpenTox::Model::Lazar.create( {:dataset_uri => @dataset.uri, :prediction_feature => @prediction_feature.uri, :subjectid => subjectid}, 
+        OpenTox::SubTask.new(task,15,25))
     rescue => e
-      error "Model creation failed with '#{e.message}'."# Please check if the input file is in a valid #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} format."
+      error "Model creation failed",e # Please check if the input file is in a valid #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} format."
     end
-    task.progress(25)
 =begin
     type = "unknown"
     if lazar.metadata[RDF.type].grep(/Classification/)
@@ -304,27 +310,28 @@ post '/models' do # create a new model
             eval "@model.update :#{k.to_s} => 0"
           end
         end
-
+      rescue => e
+        @model.update :warnings => @model.warnings.to_s+"\nModel validation failed with #{e.message}."
+        error "Model validation failed",e
+      end
+    
+      begin
         @model.update :status => "Creating validation report"
         validation_report_uri = validation.find_or_create_report(subjectid, OpenTox::SubTask.new(task,80,90)) #unless @model.dirty?
         @model.update :validation_report_uri => validation_report_uri, :status => "Creating QMRF report"
         qmrf_report = OpenTox::Crossvalidation::QMRFReport.create(@model.uri, subjectid, OpenTox::SubTask.new(task,90,99))
         @model.update(:validation_qmrf_uri => qmrf_report.uri, :status => "Completed")
-
       rescue => e
-        LOGGER.debug "Model validation failed with #{e.message}."
-        @model.save # to avoid dirty models
-        @model.update :warnings => @model.warnings.to_s+"\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
+        error "Model report creation failed",e
       end
-      
     else
       @model.update(:status => "Completed") #, :warnings => @model.warnings + "\nValidation service cannot be accessed from localhost.")
-      task.progress(100)
+      task.progress(99)
     end
     lazar.uri
   end
   @model.update :task_uri => task.uri
-
+  sleep 0.25 # power nap: ohm sometimes returns nil values for model.status or for model itself
   flash[:notice] = "Model creation and validation started - this may last up to several hours depending on the number and size of the training compounds."
   redirect url_for('/models')
 

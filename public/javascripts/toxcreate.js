@@ -50,7 +50,7 @@ $(function() {
         if( status_before != status_after) {
           $("span#model_" + id + "_status").html(data);        
           loadModel(id, 'model');
-          if (status_after == "Completed") id = -1;
+          if (status_after == "Completed" || status_after == "Error") id = -1;
         }        
       },
       error: function(data) {

@@ -43,6 +43,11 @@
       - if model.error_messages
         %dt Errors:
         %dd= model.error_messages
+      - if CONFIG[:logger]=="debug"
+        %dt Task:
+        %dd
+          %a{:href => "#{model.task_uri}", :rel => "external"}
+            = model.task_uri
       - if model.warnings
         %dt Warnings:
         %a{:href => "#", :id => "show_model_#{model.id}_warnings"} show
