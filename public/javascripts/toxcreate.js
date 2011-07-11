@@ -138,6 +138,106 @@ jQuery.fn.editModel = function(options) {
   });
 };
 
+jQuery.fn.editPolicy = function(options) {
+  var defaults = {
+    method: 'get',
+    action: this.attr('href'),
+    trigger_on: 'click'
+  };
+  var opts = $.extend(defaults, options);
+  this.bind(opts.trigger_on, function() {  
+    $.ajax({
+         type: opts.method,
+         url:  opts.action,
+         dataType: 'html',
+         data: {
+           '_method': 'get'
+         },
+         success: function(data) {         
+           $("div#model_" + opts.id + "_policy_edit").html(data);
+           $("input#model_" + opts.id + "_name").focus();
+         },
+         error: function(data) {
+           alert("model edit error!");
+         }
+       });
+    return false;
+  });
+};
+
+jQuery.fn.updatePolicy = function(options) {
+  var defaults = {
+    method: 'post',
+    action: 'policy/' + options.policyname,
+    trigger_on: 'click'
+  };
+  var opts = $.extend(defaults, options);
+  this.bind(opts.trigger_on, function() {
+    var groupname =  opts.groupname;
+    var select = $("#form_" + opts.policyname + " input[type=radio]:checked").val();
+    $('body').css('cursor','wait');
+    $('input:submit').attr("disabled", true);
+    $.ajax({
+         type: opts.method,
+         url:  opts.action,
+         dataType: 'html',
+         data: {
+           '_method': 'post',
+           'groupname': groupname,
+           'id': opts.id ,
+           'select': select
+         },
+         success: function(data) {
+           $("div#model_" + opts.id + "_name").html(data);
+           $("input#model_" + opts.id + "_name").focus();
+           $('body').css('cursor','default');
+         },
+         error: function(data) {
+           alert("policy update error!");
+         }
+       });
+    return false;
+  });
+};
+
+
+jQuery.fn.addPolicy = function(options) {
+  var defaults = {
+    method: 'post',
+    action: 'policy/',
+    trigger_on: 'click'
+  };
+  var opts = $.extend(defaults, options);
+  this.bind(opts.trigger_on, function() {
+    var groupname =  opts.groupname;
+    var selection = $("#form_" + groupname + " input[type=radio]:checked").val();
+    $('body').css('cursor','wait');
+    $('input:submit').attr("disabled", true);
+    $.ajax({
+         type: opts.method,
+         url:  opts.action,
+         dataType: 'html',
+         data: {
+           '_method': 'post',
+           'id': opts.id,
+           'groupname': groupname,
+           'selection': selection
+         },
+         success: function(data) {
+           $("div#model_" + opts.id + "_name").html(data);
+           $("input#model_" + opts.id + "_name").focus();
+           $('body').css('cursor','default');
+         },
+         error: function(data) {
+           alert("add policy error!");
+         }
+       });
+    return false;
+  });
+};
+
+
+
 jQuery.fn.cancelEdit = function(options) {
   var defaults = {
     method: 'get',
@@ -237,4 +337,3 @@ $(document).ready(function() {
     return false;
   });
 });
-
