@@ -8,8 +8,9 @@ require 'sinatra/static_assets'
 require 'ftools'
 require File.join(File.dirname(__FILE__),'model.rb')
 require File.join(File.dirname(__FILE__),'helper.rb')
+require File.join(File.dirname(__FILE__),'policy.rb')
 
-use Rack::Session::Cookie, :expire_after => 28800, 
+use Rack::Session::Cookie, :expire_after => 28800,
                            :secret => "ui6vaiNi-change_me"
 use Rack::Flash
 
@@ -114,6 +115,95 @@ get '/model/:id/name/?' do
     case params[:mode]
       when 'edit'
         haml :model_name_edit, :locals=>{:model=>model}, :layout => false
+        
+      when 'manage' #manage model policy
+        user = OpenTox::Authorization.get_user(session[:subjectid])
+        user_groups = OpenTox::Authorization.list_user_groups(user, session[:subjectid]).sort
+        groups = OpenTox::Authorization.list_groups(session[:subjectid]).sort
+        uri = model.web_uri
+        pols = OpenTox::Authorization.list_uri_policies(uri, session[:subjectid])
+        policies = OpenTox::Policies.new()
+        polxml = ""
+        pols.each do |pol|
+          xml = OpenTox::Authorization.list_policy(pol, session[:subjectid])
+          policies.load_xml(xml)
+          polxml = pol + xml
+        end
+        policy_uri = OpenTox::Authorization.list_policy_uris(pols, session[:subjectid])
+        policies.names.each do |n|
+          policies.drop_policy(n) if policies.policies[n].type == "LDAPUsers"
+        end
+        policies.names.each do |n|
+          groups.delete_if{|g| g==policies.policies[n].group}
+        end
+
+        
+        haml :model_policy_edit, :locals=>{:model=>model, :groups=>groups, :user_groups=>user_groups, :polxml => polxml, :policies=>policies, :policy_uri=>policy_uri}, :layout => false
+
+      when 'add'
+        begin #creates new group policy
+          uri = model.web_uri
+          groupname = params[:groupname]
+          subjectid = session[:subjectid]
+          datestring = Time.now.strftime("%Y-%m-%d-%H-%M-%S-x") + rand(1000).to_s
+          policyname = "policy_group_#{groupname}_#{datestring}"
+          new_p = OpenTox::Policies.new()
+          new_p.new_policy(policyname)
+          new_p.policies[policyname].set_ot_group(groupname)
+          new_p.policies[policyname].rule.uri = uri
+                
+          case params[:selection]
+            when "read"
+              new_p.policies[policyname].rule.read = true
+            when "readwrite"
+              new_p.policies[policyname].rule.readwrite = true
+            else
+              new_p.policies[policyname].rule.read = false
+            end
+          
+          OpenTox::Authorization.create_policy(new_p.to_xml, subjectid)
+          params[:mode] ="manage"
+          redirect url_for("/model/#{model.id}/name?mode=manage")
+        rescue
+          return "failed create policy"
+        end
+        
+      when 'update'
+        begin # updates rights for group policy
+          uri = model.web_uri
+          policy = params[:policyname]
+          groupname = params[:groupname]
+          subjectid = session[:subjectid]
+          
+          OpenTox::Authorization.delete_policy(policy, subjectid)
+          datestring = Time.now.strftime("%Y-%m-%d-%H-%M-%S-x") + rand(1000).to_s
+          policyname = "policy_group_#{groupname}_#{datestring}"
+          new_p = OpenTox::Policies.new()
+          new_p.new_policy(policyname)
+          new_p.policies[policyname].set_ot_group(groupname)
+          new_p.policies[policyname].rule.uri = uri
+              
+          case params[:select]
+            when "read"
+              new_p.policies[policyname].rule.read = true
+            when "readwrite"
+              new_p.policies[policyname].rule.readwrite = true
+            when "not set"
+              params[:mode] ="manage"
+              redirect url_for("/model/#{model.id}/name?mode=manage")
+            #else
+              #new_p.policies[policyname].rule.read = false
+            end
+            
+          OpenTox::Authorization.create_policy(new_p.to_xml, subjectid)
+          params[:mode] ="manage"
+          redirect url_for("/model/#{model.id}/name?mode=manage")
+        rescue
+          return "failed create policy"
+        end
+        
+        
+     
       when 'show'
         haml :model_name, :locals=>{:model=>model}, :layout => false
       else
@@ -226,7 +316,6 @@ post '/models' do # create a new model
   @model = ToxCreateModel.create(:name => name, :subjectid => subjectid)
   @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
   task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
-
     task.progress(5)
     @model.update :status => "Uploading and saving dataset", :task_uri => task.uri
 
@@ -314,7 +403,7 @@ post '/models' do # create a new model
       rescue => e
         LOGGER.debug "Model validation failed with #{e.message}."
         @model.save # to avoid dirty models
-        @model.update :warnings => @model.warnings.to_s+"\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
+        @model.update :warnings => @model.warnings + "\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
       end
       
     else
@@ -366,17 +455,12 @@ post '/predict/?' do # post chemical name to model
           :title => model.name,
           :error => prediction.metadata[OT.error]
           }
-      elsif prediction_dataset.value(@compound).nil?
-        @predictions << {
-          :title => model.name,
-          :error => "Not enough similar compounds in training dataset."
-          }
       else
         @predictions << {
           :title => model.name,
           :model_uri => model.uri,
-          :prediction => prediction_dataset.value(@compound),
-          :confidence => prediction_dataset.confidence(@compound)
+          :prediction => prediction.metadata[OT.prediction],
+          :confidence => prediction.metadata[OT.confidence]
           }
       end
     end
