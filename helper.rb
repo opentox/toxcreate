@@ -53,7 +53,13 @@ helpers do
 
   def sort(descriptors)
     features = {:activating => [], :deactivating => []}
-    descriptors.each { |d| features[d[OT.effect].to_sym] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} }
+    descriptors.each do |d| 
+      if d[OT.effect] =~ TRUE_REGEXP
+        features[:activating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} 
+      elsif d[OT.effect] =~ FALSE_REGEXP
+        features[:deactivating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} 
+      end
+    end
     features
   end
 
