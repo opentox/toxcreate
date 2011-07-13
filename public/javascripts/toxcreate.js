@@ -4,10 +4,10 @@ $(function() {
     var id = id;
     this.bind("click", function() {
       if($("a#show_model_" + id + "_warnings").html()=="show") {
-        $("dd#model_" + id + "_warnings").slideDown("slow");
+        $("div#model_" + id + "_warnings").slideDown("slow");
         $("a#show_model_" + id + "_warnings").html("hide");
       }else{
-        $("dd#model_" + id + "_warnings").slideUp("slow");
+        $("div#model_" + id + "_warnings").slideUp("slow");
         $("a#show_model_" + id + "_warnings").html("show");
       }
       return false;
