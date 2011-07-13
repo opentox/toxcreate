@@ -50,8 +50,9 @@
             = model.task_uri
       - if model.warnings
         %dt Warnings:
-        %a{:href => "#", :id => "show_model_#{model.id}_warnings"} show
-        %dd{:id => "model_#{model.id}_warnings", :style => "display: none;"}= model.warnings
+        %dd
+          %a{:href => "#", :id => "show_model_#{model.id}_warnings"} show
+          %div{:id => "model_#{model.id}_warnings", :style => "display: none;"}= model.warnings
       %dt Algorithm:
       %dd= toggle_link("#lazar_description","lazar")
       - if model.type
