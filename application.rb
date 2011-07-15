@@ -291,7 +291,7 @@ post '/models' do # create a new model
     if CONFIG[:services]["opentox-validation"]
       @model.update :status => "Validating model"
       begin
-        validation = OpenTox::Crossvalidation.create( {
+        crossvalidation = OpenTox::Crossvalidation.create( {
             :algorithm_uri => lazar.metadata[OT.algorithm],
             :dataset_uri => lazar.parameter("dataset_uri"),
             :subjectid => subjectid,
@@ -299,25 +299,37 @@ post '/models' do # create a new model
             :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}" },
             nil, OpenTox::SubTask.new(task,25,80))
 
-        @model.update(:validation_uri => validation.uri)
+        @model.update(:validation_uri => crossvalidation.uri)
         LOGGER.debug "Validation URI: #{@model.validation_uri}"
 
         # create summary
-        validation.summary(subjectid).each do |k,v|
-          begin
-            eval "@model.update :#{k.to_s} => v" if v
-          rescue
-            eval "@model.update :#{k.to_s} => 0"
+        validation = crossvalidation.statistics(subjectid)
+        @model.update(:nr_predictions => validation.metadata[OT.numInstances].to_i - validation.metadata[OT.numUnpredicted].to_i)
+        if validation.metadata[OT.classificationStatistics]
+          @model.update(:correct_predictions => validation.metadata[OT.classificationStatistics][OT.percentCorrect].to_f)
+          @model.update(:confusion_matrix => validation.confusion_matrix.to_yaml)
+          @model.update(:weighted_area_under_roc => validation.metadata[OT.classificationStatistics][OT.weightedAreaUnderRoc].to_f)
+          validation.metadata[OT.classificationStatistics][OT.classValueStatistics].each do |m|
+            if m[OT.classValue] =~ TRUE_REGEXP
+              #HACK: estimate true feature value correctly 
+              @model.update(:sensitivity => m[OT.truePositiveRate])
+              @model.update(:specificity => m[OT.trueNegativeRate])
+              break
+            end
           end
+        else
+          @model.update(:r_square => validation.metadata[OT.regressionStatistics][OT.rSquare].to_f)
+          @model.update(:root_mean_squared_error => validation.metadata[OT.regressionStatistics][OT.rootMeanSquaredError].to_f)
+          @model.update(:mean_absolute_error => validation.metadata[OT.regressionStatistics][OT.meanAbsoluteError].to_f)
         end
       rescue => e
-        @model.update :warnings => @model.warnings.to_s+"\nModel validation failed with #{e.message}."
+        @model.update :warnings => @model.warnings.to_s+"\nModel crossvalidation failed with #{e.message}."
         error "Model validation failed",e
       end
     
       begin
         @model.update :status => "Creating validation report"
-        validation_report_uri = validation.find_or_create_report(subjectid, OpenTox::SubTask.new(task,80,90)) #unless @model.dirty?
+        validation_report_uri = crossvalidation.find_or_create_report(subjectid, OpenTox::SubTask.new(task,80,90)) #unless @model.dirty?
         @model.update :validation_report_uri => validation_report_uri, :status => "Creating QMRF report"
         qmrf_report = OpenTox::Crossvalidation::QMRFReport.create(@model.uri, subjectid, OpenTox::SubTask.new(task,90,99))
         @model.update(:validation_qmrf_uri => qmrf_report.uri, :status => "Completed")
