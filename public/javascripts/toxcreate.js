@@ -236,8 +236,6 @@ jQuery.fn.addPolicy = function(options) {
   });
 };
 
-
-
 jQuery.fn.cancelEdit = function(options) {
   var defaults = {
     method: 'get',
