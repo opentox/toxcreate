@@ -321,12 +321,8 @@ post '/models' do # create a new model
 
   @model = ToxCreateModel.create(:name => name, :subjectid => subjectid)
   @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
-<<<<<<< HEAD
-  task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
-=======
   task = OpenTox::Task.create("Toxcreate Task - Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
 
->>>>>>> development
     task.progress(5)
     @model.update :status => "Uploading and saving dataset", :task_uri => task.uri
 
@@ -428,13 +424,7 @@ post '/models' do # create a new model
         qmrf_report = OpenTox::Crossvalidation::QMRFReport.create(@model.uri, subjectid, OpenTox::SubTask.new(task,90,99))
         @model.update(:validation_qmrf_uri => qmrf_report.uri, :status => "Completed")
       rescue => e
-<<<<<<< HEAD
-        LOGGER.debug "Model validation failed with #{e.message}."
-        @model.save # to avoid dirty models
-        @model.update :warnings => @model.warnings + "\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
-=======
         error "Model report creation failed",e
->>>>>>> development
       end
     else
       @model.update(:status => "Completed") #, :warnings => @model.warnings + "\nValidation service cannot be accessed from localhost.")
