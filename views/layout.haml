@@ -14,7 +14,7 @@
     .logo
       %img{:src => "ToxCreate_rgb_72.png", :alt => 'ToxCreate', :align => 'right'}/
       %br
-      Create and evaluate models to predict toxicity
+      Creates computational models to predict toxicity
     .index
       %ul
         %li{:class => ("selected" if /\/create|echa|ambit|feature/ =~ request.path )}
@@ -47,7 +47,18 @@
       = yield
 
     .footer
+      Disclaimer: ToxCreate uses state-of-the-art published and tested algorithms and methodologies with full validation information. However, just as with experimental measurements, computational predictions are subject to varying degrees of accuracy and uncertainty, so please read the full report carefully, particularly the validation information.  No liability is accepted for any inaccuracy in predictions.
+      %p
+        - tag = `git tag`.split("\n").last
+        - tagdate = `git show #{tag}|grep Date`.chomp
+        Version:
+        = tag
+        ,
+        = tagdate
       &copy;
       %a{:href => 'http://www.in-silico.ch', :rel => "external"} in silico toxicology
       2009-2011, powered by
       %a{:href => 'http://www.opentox.org', :rel => "external"} <span style="color:#5D308A;font-family:arial,sans-serif,helvetica;letter-spacing:-1px;">Open</span><span style="color:#000;font-family:arial,sans-serif,helvetica;font-weight:bold;letter-spacing:-1px;">Tox</span>
+      (a project funded by the 
+      %a{:href => "http://cordis.europa.eu/fp7/"} 7th Framework Programme
+      of the European Commission)

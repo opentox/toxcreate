@@ -1,6 +1,12 @@
 .input
 
-  This service creates 
+  This service creates and validates new
+  %em= toggle_link("#classification","classification")
+  and
+  %em= toggle_link("#regression","regression")
+  structure-activity models from your experimental data. The models can be used to predict toxicity of new chemicals (e.g. for 
+  %a{:href => "http://ec.europa.eu/environment/chemicals/reach/reach_intro.htm", :rel => "external"} REACH
+  purposes) and to reduce the need for animal testing.  The following methods are currently available:
   %ul
     %li
       = toggle_link("#lazar_description","lazar")
@@ -10,9 +16,14 @@
       = toggle_link("#lazar_description","lazar")
       %em= toggle_link("#regression","regression")
       models (experimental) 
-  from your uploaded datasets. Further modelling algorithms will be added in future versions.
- 
+  Further modelling algorithms will be added in future versions.
+
   %p
+    To create a prediction model, you will need to upload training data that includes chemical structures and their measured toxicity values, in
+    = link_to "Excel", '/help'
+    or
+    = link_to "CSV", '/help'
+    file formats. 
     Please read the 
     = link_to "instructions for creating training datasets", '/help'
     before submitting.

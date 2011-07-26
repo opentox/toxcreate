@@ -18,11 +18,16 @@ set :lock, true
 
 helpers do 
 
-  def error(message)
+  # message will be displayed to the user
+  # error will be raised -> taks will be set to error -> error details available via task-uri
+  def error(message, error=nil)
     LOGGER.error message
     @model.update :status => "Error", :error_messages => message
-    flash[:notice] = message
-    redirect url_for('/create')
+    if error
+      raise error
+    else
+      raise message
+    end
   end
 
   private 
@@ -76,6 +81,7 @@ end
 
 get '/models/?' do
   @models = ToxCreateModel.all.sort(:order => "DESC")
+  @models.each{|m| raise "internal redis error: model is nil" unless m}
   subjectstring = session[:subjectid] ? "?subjectid=#{CGI.escape(session[:subjectid])}" : ""
   haml :models, :locals=>{:models=>@models, :subjectstring => subjectstring}
 end
@@ -315,7 +321,12 @@ post '/models' do # create a new model
 
   @model = ToxCreateModel.create(:name => name, :subjectid => subjectid)
   @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
+<<<<<<< HEAD
   task = OpenTox::Task.create("Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
+=======
+  task = OpenTox::Task.create("Toxcreate Task - Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
+
+>>>>>>> development
     task.progress(5)
     @model.update :status => "Uploading and saving dataset", :task_uri => task.uri
 
@@ -332,14 +343,14 @@ post '/models' do # create a new model
           File.rename(params[:file][:tempfile].path, excel_file) # add extension, spreadsheet does not read files without extensions
           @dataset.load_spreadsheet(Excel.new excel_file, subjectid)
           if @dataset.metadata[OT.Errors]
-            error "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} formats."
+            raise "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} formats."
           end
         else
-          error "#{params[:file][:filename]} has a unsupported file type."
+          raise "#{params[:file][:filename]} has an unsupported file type."
         end
         @dataset.save(subjectid)
       rescue => e
-        error "Dataset creation failed with #{e.message}"
+        error "Dataset creation failed '#{e.message}'",e
       end
       if @dataset.features.keys.size != 1
         error "More than one feature in dataset #{params[:file][:filename]}. Please delete irrelvant columns and try again."
@@ -356,11 +367,11 @@ post '/models' do # create a new model
     @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings] and @dataset.metadata[OT.Warnings].empty?
     task.progress(15)
     begin
-      lazar = OpenTox::Model::Lazar.create(:dataset_uri => @dataset.uri, :prediction_feature => @prediction_feature.uri, :subjectid => subjectid)
+      lazar = OpenTox::Model::Lazar.create( {:dataset_uri => @dataset.uri, :prediction_feature => @prediction_feature.uri, :subjectid => subjectid}, 
+        OpenTox::SubTask.new(task,15,25))
     rescue => e
-      error "Model creation failed with '#{e.message}'."# Please check if the input file is in a valid #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} format."
+      error "Model creation failed",e # Please check if the input file is in a valid #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} format."
     end
-    task.progress(25)
 =begin
     type = "unknown"
     if lazar.metadata[RDF.type].grep(/Classification/)
@@ -374,7 +385,7 @@ post '/models' do # create a new model
     if CONFIG[:services]["opentox-validation"]
       @model.update :status => "Validating model"
       begin
-        validation = OpenTox::Crossvalidation.create( {
+        crossvalidation = OpenTox::Crossvalidation.create( {
             :algorithm_uri => lazar.metadata[OT.algorithm],
             :dataset_uri => lazar.parameter("dataset_uri"),
             :subjectid => subjectid,
@@ -382,38 +393,57 @@ post '/models' do # create a new model
             :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}" },
             nil, OpenTox::SubTask.new(task,25,80))
 
-        @model.update(:validation_uri => validation.uri)
+        @model.update(:validation_uri => crossvalidation.uri)
         LOGGER.debug "Validation URI: #{@model.validation_uri}"
 
         # create summary
-        validation.summary(subjectid).each do |k,v|
-          begin
-            eval "@model.update :#{k.to_s} => v" if v
-          rescue
-            eval "@model.update :#{k.to_s} => 0"
+        validation = crossvalidation.statistics(subjectid)
+        @model.update(:nr_predictions => validation.metadata[OT.numInstances].to_i - validation.metadata[OT.numUnpredicted].to_i)
+        if validation.metadata[OT.classificationStatistics]
+          @model.update(:correct_predictions => validation.metadata[OT.classificationStatistics][OT.percentCorrect].to_f)
+          @model.update(:confusion_matrix => validation.confusion_matrix.to_yaml)
+          @model.update(:weighted_area_under_roc => validation.metadata[OT.classificationStatistics][OT.weightedAreaUnderRoc].to_f)
+          validation.metadata[OT.classificationStatistics][OT.classValueStatistics].each do |m|
+            if m[OT.classValue] =~ TRUE_REGEXP
+              #HACK: estimate true feature value correctly 
+              @model.update(:sensitivity => m[OT.truePositiveRate])
+              @model.update(:specificity => m[OT.trueNegativeRate])
+              break
+            end
           end
+        else
+          @model.update(:r_square => validation.metadata[OT.regressionStatistics][OT.rSquare].to_f)
+          @model.update(:root_mean_squared_error => validation.metadata[OT.regressionStatistics][OT.rootMeanSquaredError].to_f)
+          @model.update(:mean_absolute_error => validation.metadata[OT.regressionStatistics][OT.meanAbsoluteError].to_f)
         end
-
+      rescue => e
+        @model.update :warnings => @model.warnings.to_s+"\nModel crossvalidation failed with #{e.message}."
+        error "Model validation failed",e
+      end
+    
+      begin
         @model.update :status => "Creating validation report"
-        validation_report_uri = validation.find_or_create_report(subjectid, OpenTox::SubTask.new(task,80,90)) #unless @model.dirty?
+        validation_report_uri = crossvalidation.find_or_create_report(subjectid, OpenTox::SubTask.new(task,80,90)) #unless @model.dirty?
         @model.update :validation_report_uri => validation_report_uri, :status => "Creating QMRF report"
         qmrf_report = OpenTox::Crossvalidation::QMRFReport.create(@model.uri, subjectid, OpenTox::SubTask.new(task,90,99))
         @model.update(:validation_qmrf_uri => qmrf_report.uri, :status => "Completed")
-
       rescue => e
+<<<<<<< HEAD
         LOGGER.debug "Model validation failed with #{e.message}."
         @model.save # to avoid dirty models
         @model.update :warnings => @model.warnings + "\nModel validation failed with #{e.message}.", :status => "Error", :error_messages => e.message
+=======
+        error "Model report creation failed",e
+>>>>>>> development
       end
-      
     else
       @model.update(:status => "Completed") #, :warnings => @model.warnings + "\nValidation service cannot be accessed from localhost.")
-      task.progress(100)
+      task.progress(99)
     end
     lazar.uri
   end
   @model.update :task_uri => task.uri
-
+  sleep 0.25 # power nap: ohm sometimes returns nil values for model.status or for model itself
   flash[:notice] = "Model creation and validation started - this may last up to several hours depending on the number and size of the training compounds."
   redirect url_for('/models')
 
@@ -441,6 +471,7 @@ post '/predict/?' do # post chemical name to model
     db_activities = []
     lazar = OpenTox::Model::Lazar.new model.uri
     prediction_dataset_uri = lazar.run({:compound_uri => @compound.uri, :subjectid => subjectid})
+    LOGGER.debug "Prediction dataset_uri: #{prediction_dataset_uri}"
     prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri, subjectid)
     if prediction_dataset.metadata[OT.hasSource].match(/dataset/)
       @predictions << {
