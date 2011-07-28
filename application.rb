@@ -251,6 +251,9 @@ post '/models' do # create a new model
           if @dataset.metadata[OT.Errors]
             raise "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} formats."
           end
+        when ".sdf"
+          sdf = params[:file][:tempfile].read
+          @dataset.load_sdf(sdf, subjectid)
         else
           raise "#{params[:file][:filename]} has an unsupported file type."
         end
