@@ -21,10 +21,11 @@
   %p
     To create a prediction model, you will need to upload training data that includes chemical structures and their measured toxicity values, in
     = link_to "Excel", '/help'
-    or
+    ,
     = link_to "CSV", '/help'
-    file formats. 
-    Please read the 
+    or
+    = link_to "SDF", '/help'
+    file formats. Please read the 
     = link_to "instructions for creating training datasets", '/help'
     before submitting.
 
@@ -35,8 +36,10 @@
       %label{:for => 'file'}
         Upload training data in
         = link_to "Excel", '/help'
-        or
+        ,
         = link_to "CSV", '/help'
+        or
+        = link_to "SDF", '/help'
         format:
       %input{:type => 'file', :name => 'file', :id => 'file', :size => '41'}
     %input{ :type => "submit", :value => "Create model"}
