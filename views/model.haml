@@ -71,6 +71,8 @@
             ,
             -#%a{:href => "#{model.training_dataset}.rdf"} RDF/XML
             -#%em (experts) ,
+            %a{:href => "#{model.training_dataset}.sdf#{subjectstring}" } SDF
+            ,
             %a{:href => "#{model.training_dataset}.yaml#{subjectstring}" } YAML
             %em  (experts)
       - if model.feature_dataset
@@ -79,6 +81,8 @@
           -#%a{:href => "#{model.feature_dataset}.rdf"} RDF/XML
           -#,
           %a{:href => "#{model.feature_dataset}.xls#{subjectstring}"} Excel sheet
+          ,
+          %a{:href => "#{model.feature_dataset}.sdf#{subjectstring}"} SDF
           ,
           %a{:href => "#{model.feature_dataset}.yaml#{subjectstring}"} YAML
           %em  (experts)
