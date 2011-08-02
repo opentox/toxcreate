@@ -101,6 +101,7 @@ $(function() {
       success: function(data) {
         if (view == "model") $("div#model_" + id).html(data);
         if (view.match(/validation/)) $("dl#model_validation_" + id).html(data);
+        addExternalLinks();
       },
       error: function(data) {
         //alert("loadModel error");
@@ -228,6 +229,10 @@ jQuery.fn.deleteModel = function(type, options) {
 };
 
 $(document).ready(function() {
+  addExternalLinks();
+});
+
+addExternalLinks = function() {
   $('A[rel="external"]').each(function() {
     $(this).attr('alt', 'Link opens in new window.');
     $(this).attr('title', 'Link opens in new window.');
@@ -236,5 +241,4 @@ $(document).ready(function() {
     window.open($(this).attr('href'));
     return false;
   });
-});
-
+};

@@ -27,14 +27,10 @@ class ToxCreateModel < Ohm::Model
 
 	#attributey :validation_qmrf_task_uri
 	attribute :validation_qmrf_uri
-
+  attribute :confusion_matrix
 	attribute :nr_compounds
-	attribute :nr_predictions
-	attribute :true_positives
-	attribute :false_positives
-	attribute :true_negatives
-	attribute :false_negatives
-	attribute :correct_predictions
+  attribute :nr_predictions
+  attribute :correct_predictions
 	attribute :weighted_area_under_roc
 	attribute :sensitivity
 	attribute :specificity
