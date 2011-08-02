@@ -31,8 +31,9 @@
 
     .content
       .login_info
-        User:
-        %b= session[:username]
+        - if session[:username].size > 0
+          User:
+          %b= session[:username]
 
       - if `hostname`.match(/ot-test/)
         .notice 
