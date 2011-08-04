@@ -33,12 +33,20 @@
       = toggle_link "#significant_fragments", "Significant fragments"
       are highlighted in the structure display as follows:
       %ul
-        %li
-          .active activating fragments
-        %li
-          .inactive deactivating fragments 
-        %li
-          .inconclusive regions, where activating and deactivating fragments overlap
+        - if @value_map.empty?
+          %li
+            .active activating fragments
+          %li
+            .inactive deactivating fragments 
+          %li
+            .inconclusive regions, where activating and deactivating fragments overlap
+        - else
+          %li
+            .active= "features that occur predominately in compounds with activity: \"#{@value_map[2]}\""
+          %li
+            .inactive= "features that occur predominately in compounds with activity: \"#{@value_map[1]}\""
+          %li
+            .inconclusive regions, where fragments from different classes overlap
         %li
           .other inert parts
 

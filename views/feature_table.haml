@@ -2,7 +2,11 @@
   - unless features[:activating].empty?
     %tr
       %th
-        activating 
+        - if @value_map.empty?
+          activating 
+        - else
+          predominatly in compounds with activity
+          = "\"#{@value_map[2]}\""
         (
         %a{:href => "http://www.daylight.com/dayhtml/doc/theory/theory.smarts.html", :rel => "external"} SMARTS
         )
@@ -15,7 +19,11 @@
   - unless features[:deactivating].empty?
     %tr
       %th
-        deactivating
+        - if @value_map.empty?
+          deactivating
+        - else
+          predominatly in compounds with activity
+          = "\"#{@value_map[1]}\""
         (
         %a{:href => "http://www.daylight.com/dayhtml/doc/theory/theory.smarts.html", :rel => "external"} SMARTS
         )
