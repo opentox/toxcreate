@@ -372,9 +372,14 @@ post '/predict/?' do # post chemical name to model
     confidence = nil
     title = nil
     db_activities = []
-    lazar = OpenTox::Model::Lazar.new model.uri
+    lazar = OpenTox::Model::Lazar.find model.uri
     prediction_dataset_uri = lazar.run({:compound_uri => @compound.uri, :subjectid => subjectid})
     LOGGER.debug "Prediction dataset_uri: #{prediction_dataset_uri}"
+    if lazar.value_map
+      @value_map = lazar.value_map
+    else
+      @value_map = nil
+    end
     prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri, subjectid)
     if prediction_dataset.metadata[OT.hasSource].match(/dataset/)
       @predictions << {
@@ -415,7 +420,11 @@ post "/lazar/?" do # get detailed prediction
   @model_uri = params[:model_uri]
   lazar = OpenTox::Model::Lazar.find @model_uri
   prediction_dataset_uri = lazar.run(:compound_uri => params[:compound_uri], :subjectid => session[:subjectid])
-  @value_map = lazar.value_map
+  if lazar.value_map
+    @value_map = lazar.value_map
+  else
+    @value_map = nil
+  end
   @prediction = OpenTox::LazarPrediction.find(prediction_dataset_uri, session[:subjectid])
   @compound = OpenTox::Compound.new(params[:compound_uri])
   haml :lazar
