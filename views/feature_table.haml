@@ -6,7 +6,7 @@
           activating 
         - else
           predominatly in compounds with activity
-          = "\"#{@value_map[2]}\""
+          = "\"#{@value_map[@value_map.keys.sort.last]}\""
         (
         %a{:href => "http://www.daylight.com/dayhtml/doc/theory/theory.smarts.html", :rel => "external"} SMARTS
         )
@@ -23,7 +23,7 @@
           deactivating
         - else
           predominatly in compounds with activity
-          = "\"#{@value_map[1]}\""
+          = "\"#{@value_map[@value_map.keys.sort.first]}\""
         (
         %a{:href => "http://www.daylight.com/dayhtml/doc/theory/theory.smarts.html", :rel => "external"} SMARTS
         )
