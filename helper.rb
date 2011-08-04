@@ -51,20 +51,20 @@ helpers do
     haml :js_link, :locals => {:name => name, :destination => destination, :method => "toggle"}, :layout => false
   end
 
-  def sort(descriptors)
+  def sort(descriptors,value_map)
     features = {:activating => [], :deactivating => []}
     descriptors.each do |d|
-      if d[OT.effect] =~ TRUE_REGEXP
+      if value_map[d[OT.effect]] =~ TRUE_REGEXP
         features[:activating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} 
-      elsif d[OT.effect] =~ FALSE_REGEXP
+      elsif value_map[d[OT.effect]] =~ FALSE_REGEXP
         features[:deactivating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} 
       end
     end
     features
   end
 
-  def compound_image(compound,descriptors)
-    haml :compound_image, :locals => {:compound => compound, :features => sort(descriptors)}, :layout => false
+  def compound_image(compound,descriptors,value_map)
+    haml :compound_image, :locals => {:compound => compound, :features => sort(descriptors,value_map)}, :layout => false
   end
   
   def activity_markup(activity)

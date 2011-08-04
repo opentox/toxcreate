@@ -18,7 +18,7 @@
         %th Supporting information
 
       %tr
-        %td.image= compound_image(@compound,@prediction.descriptors(@compound))
+        %td.image= compound_image(@compound,@prediction.descriptors(@compound),@value_map)
         %td= activity_markup(@prediction.value(@compound))
         %td= sprintf('%.03g', @prediction.confidence(@compound)) 
         %td
@@ -40,7 +40,7 @@
       %tr#fragments{ :style => "display: none;" }
         %td{:colspan => '4'}
           = hide_link('#fragments')
-          = haml :feature_table, :locals => {:features => sort(@prediction.descriptors(@compound))}, :layout => false
+          = haml :feature_table, :locals => {:features => sort(@prediction.descriptors(@compound),@value_map)}, :layout => false
 
     %tbody#neighbors
       = haml :neighbors, :locals => {:neighbors => @prediction.neighbors(@compound), :page => @page},  :layout => false

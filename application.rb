@@ -413,8 +413,9 @@ post "/lazar/?" do # get detailed prediction
   @page = 0
   @page = params[:page].to_i if params[:page]
   @model_uri = params[:model_uri]
-  lazar = OpenTox::Model::Lazar.new @model_uri
+  lazar = OpenTox::Model::Lazar.find @model_uri
   prediction_dataset_uri = lazar.run(:compound_uri => params[:compound_uri], :subjectid => session[:subjectid])
+  @value_map = lazar.value_map
   @prediction = OpenTox::LazarPrediction.find(prediction_dataset_uri, session[:subjectid])
   @compound = OpenTox::Compound.new(params[:compound_uri])
   haml :lazar
