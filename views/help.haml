@@ -1,4 +1,5 @@
 = link_to "Back to model creation", '/create'
+%h2 Spreadsheets (Excel, CSV)
 %p
   Input files have two columns. Enter in the first column the chemical structure in
   %a{:href => "http://en.wikipedia.org/wiki/Simplified_molecular_input_line_entry_specification", :rel => "external"} SMILES
@@ -97,17 +98,18 @@
 %h3 CSV example
 
 .code
-  %code
-    %br SMILES, Hamster Carcinogenicity
-    %br CC(=O)Nc1ccc(O)cc1, 1  
-    %br O=c1[nH]cnc2[nH]ncc12, 1  
-    %br CCCCNc1cc(cc(c1Oc2ccccc2)S(=O)(=O)N)C(=O)O, 1  
-    %br CC(C)(C)NCC(O)COc1cccc2NC(=O)CCc12, 1  
-    %br CN(C)CCCC1(OCc2cc(C#N)ccc21)c3ccc(F)cc3, 1  
-    %br CCC(CC)CCN1C(=O)CN=C(C2CCCCC2F)c3cc(Cl)ccc13, 0 
-    %br CCN(CC)CC(=O)Nc1c(C)cccc1C, 0 
-    %br CC(C)(C)NCC(O)COc1cccc2CC(O)C(O)Cc12, 0 
-    %br CN1CCCC1c2cccnc2, 0 
+  %pre
+    :preserve
+      SMILES, Hamster Carcinogenicity
+      CC(=O)Nc1ccc(O)cc1, 1  
+      O=c1[nH]cnc2[nH]ncc12, 1  
+      CCCCNc1cc(cc(c1Oc2ccccc2)S(=O)(=O)N)C(=O)O, 1  
+      CC(C)(C)NCC(O)COc1cccc2NC(=O)CCc12, 1  
+      CN(C)CCCC1(OCc2cc(C#N)ccc21)c3ccc(F)cc3, 1  
+      CCC(CC)CCN1C(=O)CN=C(C2CCCCC2F)c3cc(Cl)ccc13, 0 
+      CCN(CC)CC(=O)Nc1c(C)cccc1C, 0 
+      CC(C)(C)NCC(O)COc1cccc2CC(O)C(O)Cc12, 0 
+      CN1CCCC1c2cccnc2, 0 
 
 %p
   CSV examples for download:
@@ -120,6 +122,42 @@
       (regression)
 
 %p You can create CSV files in Excel: Create a sheet with two columns and export them as CSV file with the "Save As" option from the menu, selecting the CSV (comma delimited) format.
+
+%h2 SDF
+
+%p
+  Currently ToxCreate supports 
+  %a{:href => "http://en.wikipedia.org/wiki/Chemical_table_file#SDF", :rel => "external"} SDF
+  files with a single data item as shown below (multiple data items will raise an error). You can also download an example SDF file:
+  = link_to "hamster_carcinogenicity.sdf", "/hamster_carcinogenicity.sdf"
+
+.code
+  %pre
+    -# keep empty lines -they are required by SDF
+    :preserve
+      
+      
+      
+      
+        6  6  0  0  0  0  0  0  0  0  1 V2000
+          1.3304   -1.0738    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+          2.1104    0.0000    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0
+          3.3767   -0.4086    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+          3.3767   -1.7390    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0
+          2.1104   -2.1509    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0
+          0.0000   -1.0738    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0
+        1  2  1  0  0  0  0
+        1  5  2  0  0  0  0
+        1  6  1  0  0  0  0
+        2  3  2  0  0  0  0
+        3  4  1  0  0  0  0
+        4  5  1  0  0  0  0
+      M  END
+      &gt;  &lt;ActivityOutcome_CPDBAS_Hamster&gt;
+      inactive
+      
+      $$$$
+
 
 %p 
   %h3 Policies

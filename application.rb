@@ -341,6 +341,9 @@ post '/models' do # create a new model
           if @dataset.metadata[OT.Errors]
             raise "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} formats."
           end
+        when ".sdf"
+          sdf = params[:file][:tempfile].read
+          @dataset.load_sdf(sdf, subjectid)
         else
           raise "#{params[:file][:filename]} has an unsupported file type."
         end
@@ -459,9 +462,14 @@ post '/predict/?' do # post chemical name to model
     confidence = nil
     title = nil
     db_activities = []
-    lazar = OpenTox::Model::Lazar.new model.uri
+    lazar = OpenTox::Model::Lazar.find model.uri
     prediction_dataset_uri = lazar.run({:compound_uri => @compound.uri, :subjectid => subjectid})
     LOGGER.debug "Prediction dataset_uri: #{prediction_dataset_uri}"
+    if lazar.value_map
+      @value_map = lazar.value_map
+    else
+      @value_map = nil
+    end
     prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri, subjectid)
     if prediction_dataset.metadata[OT.hasSource].match(/dataset/)
       @predictions << {
@@ -495,8 +503,13 @@ post "/lazar/?" do # get detailed prediction
   @page = 0
   @page = params[:page].to_i if params[:page]
   @model_uri = params[:model_uri]
-  lazar = OpenTox::Model::Lazar.new @model_uri
+  lazar = OpenTox::Model::Lazar.find @model_uri
   prediction_dataset_uri = lazar.run(:compound_uri => params[:compound_uri], :subjectid => session[:subjectid])
+  if lazar.value_map
+    @value_map = lazar.value_map
+  else
+    @value_map = nil
+  end
   @prediction = OpenTox::LazarPrediction.find(prediction_dataset_uri, session[:subjectid])
   @compound = OpenTox::Compound.new(params[:compound_uri])
   haml :lazar
