@@ -13,8 +13,8 @@
   - neighbor_id += 1
   - compound = OpenTox::Compound.new(neighbor[OT.compound])
   %tr
-    %td.image= compound_image(compound,@prediction.descriptors(compound))
-    %td= activity_markup(neighbor[OT.measuredActivity])
+    %td.image= compound_image(compound,@prediction.descriptors(compound),@value_map)
+    %td= activity_markup(neighbor[OT.measuredActivity], @value_map)
     %td= sprintf('%.03g', neighbor[OT.similarity])
     %td
       %ul
@@ -39,5 +39,5 @@
   %tr{:id => "fragments#{neighbor_id}", :style => "display: none;" }
     %td{:colspan => '4'}
       = hide_link("#fragments#{neighbor_id}")
-      = haml :feature_table, :locals => {:features => sort(@prediction.descriptors(compound))}, :layout => false
+      = haml :feature_table, :locals => {:features => sort(@prediction.descriptors(compound),@value_map)}, :layout => false
 

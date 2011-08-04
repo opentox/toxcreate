@@ -4,10 +4,10 @@ $(function() {
     var id = id;
     this.bind("click", function() {
       if($("a#show_model_" + id + "_warnings").html()=="show") {
-        $("dd#model_" + id + "_warnings").slideDown("slow");
+        $("div#model_" + id + "_warnings").slideDown("slow");
         $("a#show_model_" + id + "_warnings").html("hide");
       }else{
-        $("dd#model_" + id + "_warnings").slideUp("slow");
+        $("div#model_" + id + "_warnings").slideUp("slow");
         $("a#show_model_" + id + "_warnings").html("show");
       }
       return false;
@@ -50,7 +50,7 @@ $(function() {
         if( status_before != status_after) {
           $("span#model_" + id + "_status").html(data);        
           loadModel(id, 'model');
-          if (status_after == "Completed") id = -1;
+          if (status_after == "Completed" || status_after == "Error") id = -1;
         }        
       },
       error: function(data) {
@@ -77,8 +77,7 @@ $(function() {
         if (progress == "100") return -1;         
         
         $("div#model_" + id + "_progress").progressbar("value", parseInt(progress)); 
-        $("div#model_" + id + "_progress").attr({title: parseInt(progress) + "%", alt: parseInt(progress) + "%"});
-        //$("div#model_" + id + "_progress").attr("alt", parseInt(progress) + "%");
+        $("div#model_" + id + "_progress").attr({title: parseInt(progress) + "%"});
       },
       error: function(data) {
         id = -1;
@@ -101,6 +100,7 @@ $(function() {
       success: function(data) {
         if (view == "model") $("div#model_" + id).html(data);
         if (view.match(/validation/)) $("dl#model_validation_" + id).html(data);
+        addExternalLinks();
       },
       error: function(data) {
         //alert("loadModel error");
@@ -228,6 +228,10 @@ jQuery.fn.deleteModel = function(type, options) {
 };
 
 $(document).ready(function() {
+  addExternalLinks();
+});
+
+addExternalLinks = function() {
   $('A[rel="external"]').each(function() {
     $(this).attr('alt', 'Link opens in new window.');
     $(this).attr('title', 'Link opens in new window.');
@@ -236,5 +240,4 @@ $(document).ready(function() {
     window.open($(this).attr('href'));
     return false;
   });
-});
-
+};

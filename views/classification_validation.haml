@@ -1,33 +1,44 @@
 %dt Correct predictions:
 %dd
-	= sprintf("%.2f", model.correct_predictions.to_f) if model.correct_predictions
-	= '%'
+  = sprintf("%.2f", model.correct_predictions.to_f) if model.correct_predictions
+  = '%'
 %dt
-	%a{:href => "http://en.wikipedia.org/wiki/Receiver_operating_characteristic", :target => "_blank"} Weighted area under ROC:
+  %a{:href => "http://en.wikipedia.org/wiki/Receiver_operating_characteristic", :rel => "external"} Weighted area under ROC:
 %dd 
-	= sprintf("%.3f", model.weighted_area_under_roc.to_f) if model.weighted_area_under_roc
+  = sprintf("%.3f", model.weighted_area_under_roc.to_f) if model.weighted_area_under_roc
 %dt
-	%a{:href => "http://en.wikipedia.org/wiki/Sensitivity_and_specificity", :target => "_blank"} Specificity:
+  %a{:href => "http://en.wikipedia.org/wiki/Sensitivity_and_specificity", :rel => "external"} Specificity:
 %dd= sprintf("%.3f", model.specificity.to_f) if model.specificity
 %dt
-	%a{:href => "http://en.wikipedia.org/wiki/Sensitivity_and_specificity", :target => "_blank"} Sensitivity:
+  %a{:href => "http://en.wikipedia.org/wiki/Sensitivity_and_specificity", :rel => "external"} Sensitivity:
 %dd= sprintf("%.3f", model.sensitivity.to_f) if model.sensitivity
 %dt
-	%a{:href => "http://en.wikipedia.org/wiki/Confusion_matrix", :target => "_blank"} Confusion Matrix:
-%dd
-	%table
-		%tr
-			%td{:colspan => 2, :rowspan => 2}
-			%th{:colspan => 2} Measured
-		%tr
-			%th{:bgcolor => "#CCD2DC"} active
-			%th{:bgcolor => "#CCD2DC"} inactive
-		%tr
-			%th{:rowspan => 2} Predicted
-			%th{:bgcolor => "#CCD2DC"} active
-			%td= model.true_positives if model.true_positives
-			%td= model.false_positives if model.false_positives
-		%tr
-			%th{:bgcolor => "#CCD2DC"} inactive
-			%td= model.false_negatives if model.false_negatives
-			%td= model.true_negatives if model.true_negatives
+  %a{:href => "http://en.wikipedia.org/wiki/Confusion_matrix", :rel => "external"} Confusion Matrix:
+- if model.confusion_matrix
+  - cm = YAML.load(model.confusion_matrix)
+  %dd
+    %table
+      %tr
+        %td{:colspan => 2, :rowspan => 2}
+        %th{:colspan => (cm.size - 1)} Measured
+      %tr
+        - (1..cm[0].size-1).each do |i|
+          %th{:bgcolor => "#CCD2DC"}
+            = cm[0][i]
+      %tr
+        %th{:rowspan => (cm.size - 1)} Predicted
+        - (0..cm[1].size-1).each do |i|
+          - if i == 0
+            %th{:bgcolor => "#CCD2DC"}
+              = cm[1][i]
+          - else
+            %td= cm[1][i]
+      - if cm.size > 2
+        - (2..cm.size-1).each do |i|
+          %tr
+            - (0..cm[i].size-1).each do |j|
+              - if j == 0
+                %th{:bgcolor => "#CCD2DC"}
+                  = cm[i][j]
+              - else
+                %td= cm[i][j]

@@ -24,7 +24,7 @@
                 #{js}
               });
               
-            %div{:id => "model_#{model.id}_progress", :class => "model_progress", :title => "#{percentage_completed}%", :alt => "#{percentage_completed}%"}
+            %div{:id => "model_#{model.id}_progress", :class => "model_progress", :title => "#{percentage_completed}%"}
               //= haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false        
         - if is_authorized(model.web_uri, "DELETE")
           %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete_link'} 
@@ -36,17 +36,23 @@
           %br
         
       %dt Started:
-      %dd= Time.parse(model.created_at.to_s).strftime("%m/%d/%Y - %I:%M:%S%p") if model.created_at
+      %dd= Time.parse(model.created_at.to_s).strftime("%m/%d/%Y - %I:%M:%S%p %Z") if model.created_at
       - if model.nr_compounds
         %dt Training compounds:
         %dd= model.nr_compounds 
       - if model.error_messages
         %dt Errors:
         %dd= model.error_messages
+      - if CONFIG[:logger]=="debug"
+        %dt Task:
+        %dd
+          %a{:href => "#{model.task_uri}", :id => "model_#{model.id}_task_link", :rel => "external"}
+            = model.task_uri
       - if model.warnings
         %dt Warnings:
-        %a{:href => "#", :id => "show_model_#{model.id}_warnings"} show
-        %dd{:id => "model_#{model.id}_warnings", :style => "display: none;"}= model.warnings
+        %dd
+          %a{:href => "#", :id => "show_model_#{model.id}_warnings"} show
+          %div{:id => "model_#{model.id}_warnings", :style => "display: none;"}= model.warnings
       %dt Algorithm:
       %dd= toggle_link("#lazar_description","lazar")
       - if model.type
@@ -65,6 +71,8 @@
             ,
             -#%a{:href => "#{model.training_dataset}.rdf"} RDF/XML
             -#%em (experts) ,
+            %a{:href => "#{model.training_dataset}.sdf#{subjectstring}" } SDF
+            ,
             %a{:href => "#{model.training_dataset}.yaml#{subjectstring}" } YAML
             %em  (experts)
       - if model.feature_dataset
@@ -73,6 +81,8 @@
           -#%a{:href => "#{model.feature_dataset}.rdf"} RDF/XML
           -#,
           %a{:href => "#{model.feature_dataset}.xls#{subjectstring}"} Excel sheet
+          ,
+          %a{:href => "#{model.feature_dataset}.sdf#{subjectstring}"} SDF
           ,
           %a{:href => "#{model.feature_dataset}.yaml#{subjectstring}"} YAML
           %em  (experts)
