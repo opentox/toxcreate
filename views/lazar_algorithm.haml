@@ -32,23 +32,29 @@
     %p
       = toggle_link "#significant_fragments", "Significant fragments"
       are highlighted in the structure display as follows:
-      %ul
-        - if @value_map.empty?
+      - if @value_map.empty?
+        %ul
           %li
             .active activating fragments
           %li
             .inactive deactivating fragments 
           %li
             .inconclusive regions, where activating and deactivating fragments overlap
-        - else
           %li
-            .active= "features that occur predominately in compounds with activity: \"#{@value_map[2]}\""
+            .other inert parts
+      - else
+        %ul
           %li
-            .inactive= "features that occur predominately in compounds with activity: \"#{@value_map[1]}\""
+            .active= "features that occur predominately in compounds with activity: \"#{@value_map[@value_map.keys.sort.last]}\""
+          %li
+            .inactive= "features that occur predominately in compounds with activity: \"#{@value_map[@value_map.keys.sort.first]}\""
           %li
             .inconclusive regions, where fragments from different classes overlap
-        %li
-          .other inert parts
+          %li
+            .other inert parts
+      - if @value_map.size > 2
+        .notice Incomplete implementation of feature highlighting and display of significant fragments. Only features for 2 classes are shown!
+
 
     %p
       Please keep in mind that predictions are based on the measured activities of neighbors. 
