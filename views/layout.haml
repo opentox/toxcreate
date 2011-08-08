@@ -51,7 +51,7 @@
       Disclaimer: ToxCreate uses state-of-the-art published and tested algorithms and methodologies with full validation information. However, just as with experimental measurements, computational predictions are subject to varying degrees of accuracy and uncertainty, so please read the full report carefully, particularly the validation information.  No liability is accepted for any inaccuracy in predictions.
       %p
         - tag = `git tag`.split("\n").last
-        - tagdate = `git show #{tag}|grep Date`.chomp
+        - tagdate = `git show #{tag}|grep Date`.split("\n").last
         Version:
         = tag
         ,
