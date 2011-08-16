@@ -48,7 +48,7 @@
           -#%input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id, :disabled => !is_authorized(model.uri, "GET")}
           %br
       %br
-      %p
+      %fieldset
         3.
         %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
         %input{ :type => "submit", :value => "Predict", :onclick => "getsmiles();"}
