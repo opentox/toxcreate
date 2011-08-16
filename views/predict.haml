@@ -6,72 +6,50 @@
   }
 
 .input
-  %ol
-    %li
-      %p 
-        Draw a chemical structure
-        %a{:href => "jme_help", :rel => "external"} (help) 
-      %form{:name => "form", :action => url_for("/predict"), :method => "post", :enctype => "multipart/form-data"}
+  %p 
+    
+    
+  - unless @models.empty?
+
+    %form{:name => "form", :action => url_for('/predict'), :method => "post", :enctype => "multipart/form-data" }
+      %fieldset
+        %p
+          1. Draw a chemical structure
+          %a{:href => "jme_help", :rel => "external"} (help)
+        %label &nbsp;
         .jme
-          %applet{:code => "JME.class",  :name => "JME", :archive => "JME.jar", :width => "500", :height => "360"}
+          %applet{:code => "JME.class", :name => "JME", :archive => "JME.jar", :width => "500", :height => "360"}
             %param{ :name => "options", :value => "polarnitro"}
             Please enable Java and JavaScript in your browser to use the JME editor.
-            
-          %span{:style=> "font-size:75%"}
-          &copy;
-            %a{:href => 'http://www.molinspiration.com/jme/index.html', :rel => "external"} JME Editor courtesy of Peter Ertl, Novartis</span>
-            
+          %span{:style=>"font-size:75%"}
+            &copy;
+            %a{:href => 'http://www.molinspiration.com/jme/index.html', :rel => "external"} JME Editor
+            courtesy of Peter Ertl, Novartis
         %br
-        %label{:for => 'identifier'}
+        -# %label{:for => 'identifier'} or enter a Name, InChI, Smiles, CAS, ...
+        %label{:for => 'identifier'} 
           or enter the 
-          %a{:href => "http://en.wikipedia.org/wiki/Simplified_molecular_input_line_entry_specification", :rel => "external"} SMILES 
+          %a{:href => "http://en.wikipedia.org/wiki/Simplified_molecular_input_line_entry_specification", :rel => "external"} SMILES
           string
           
         %br
         %br
         %input{:type => 'text', :name => 'identifier', :id => 'identifier', :size => '60'}
-        
-        
-    %li
-      %p select a toxic endpoint
-      
-    %li
-      %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
-      %input{ :type => "submit", :value => "Predict", :onclick => "getsmiles();"}
-      -#= link_to 'Cancel', '/predict' 
-
--#  %p Use this service to obtain predictions from OpenTox models.
--#  - unless @models.empty?
--#
--#    %form{:name => "form", :action => url_for('/predict'), :method => "post", :enctype => "multipart/form-data" }
--#      %fieldset
--#        %legend Draw a compound
--#        %label &nbsp;
--#        .jme
--#          %applet{:code => "JME.class",  :name => "JME", :archive => "JME.jar", :width => "500", :height => "360"}
--#            %param{ :name => "options", :value => "polarnitro"}
--#            Please enable Java and JavaScript in your browser to use the JME editor. 
--#
--#          %jme_info
--#            <span style="font-size:75%">&copy;
--#            %a{:href => 'http://www.molinspiration.com/jme/index.html', :rel => "external"} JME Editor
--#            courtesy of Peter Ertl, Novartis</span> 
--#        %br  
--#        %label{:for => 'identifier'} or enter a Name, InChI, Smiles, CAS, ...
--#        %input{:type => 'text', :name => 'identifier', :id => 'identifier', :size => '60'}
--#      %br
--#      %fieldset
--#        %legend
--#          Choose one or more prediction models
--#        %br
--#        - @models.each do |model|
--#          %input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => "model#{model.id}", :disabled => false}
--#          %label{:for => "model#{model.id}"}
--#            = model.name
--#          -#%input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id, :disabled => !is_authorized(model.uri, "GET")}            
--#          %br
--#      %br
--#      %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
--#      %input{ :type => "submit", :value => "Predict", :onclick => "getsmiles();"}
--#      = link_to 'Cancel', '/predict' 
-
+      %br
+      %fieldset
+        %p
+          2. Select one or more toxic endpoints
+          
+        %br
+        - @models.each do |model|
+          %input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => "model#{model.id}", :disabled => false}
+          %label{:for => "model#{model.id}"}
+            = model.name
+          -#%input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id, :disabled => !is_authorized(model.uri, "GET")}
+          %br
+      %br
+      %p
+        3.
+        %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
+        %input{ :type => "submit", :value => "Predict", :onclick => "getsmiles();"}
+        -#= link_to 'Cancel', '/predict' 
