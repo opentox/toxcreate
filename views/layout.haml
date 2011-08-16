@@ -3,7 +3,7 @@
 
   %head
     %meta{'http-equiv' => 'Content-Type', :content => 'text/html; charset=UTF-8'}
-    %title ToxCreate
+    %title lazar (Lazy Structure Activity Relationships)
     %script{:type => "text/javascript", :src  => "javascripts/jquery.js"}
     %script{:type => "text/javascript", :src  => "javascripts/toxcreate.js"}
     %script{:type => "text/javascript", :src  => "javascripts/jquery-ui-progressbar.js"}
@@ -25,8 +25,8 @@
         - if AA_SERVER
           %li{:class => ("selected" if /login/ =~ request.path )}
             = link_to "Login", "/login"
-        %li{:class => ("selected" if /help/ =~ request.path )}
-          = link_to "Documentation", "/help"
+        -#%li{:class => ("selected" if /help/ =~ request.path )}
+          -#= link_to "Documentation", "/help"
       %hr
 
     .content
@@ -48,7 +48,7 @@
       = yield
 
     .footer
-      &copy;
-      %a{:href => 'http://www.in-silico.ch', :rel => "external"} 
+      &copy; 
       %span{:style=> "font-style:italic"} in silico
       toxicology gmbh 2004-2011
+      %a{:href => 'http://www.in-silico.ch', :rel => "external"}
