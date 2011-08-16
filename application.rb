@@ -71,7 +71,7 @@ before do
 end
 
 get '/?' do
-  redirect url_for('/create')
+  redirect url_for('/predict')
 end
 
 get '/login' do
@@ -165,11 +165,11 @@ get '/predict/?' do
   @models = @models.collect{|m| m if m.status == 'Completed'}.compact
   haml :predict
 end
-
+=begin
 get '/create' do
   haml :create
 end
-
+=end
 get '/help' do
   haml :help
 end
