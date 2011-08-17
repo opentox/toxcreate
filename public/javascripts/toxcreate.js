@@ -207,6 +207,7 @@ jQuery.fn.deleteModel = function(type, options) {
     if(confirm(opts.confirm_message)) {
       $("div#model_" + opts.id).fadeTo("slow",0.5);
       $("span#model_" + opts.id + "_status").html("Deleting");
+      $("a#delete_" + opts.id).html("");
       $.ajax({
          type: opts.method,
          url:  opts.action,
