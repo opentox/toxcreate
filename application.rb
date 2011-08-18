@@ -31,7 +31,7 @@ helpers do
 
   private 
   def delete_model(model, subjectid=nil)
-    task = OpenTox::Task.create("Deleting model: #{model.uri}",url_for("/delete",:full)) do |task|
+    task = OpenTox::Task.create("Deleting model: #{model.web_uri}", url_for("/delete",:full)) do |task|
       begin OpenTox::RestClientWrapper.put(File.join(model.task_uri, "Cancelled"), "Cancelled",{:subjectid => subjectid}) if model.task_uri rescue LOGGER.warn "Cannot cancel task #{model.task_uri}" end
       task.progress(15)
       delete_dependent(model.uri, subjectid) if model.uri
@@ -49,15 +49,25 @@ helpers do
       if model.feature_dataset
         delete_dependent(model.feature_dataset, subjectid) if model.feature_dataset.match(CONFIG[:services]["opentox-dataset"])
       end
+      task.progress(95)
+      model.delete
+      unless ToxCreateModel.get(model.id)
+      begin
+        aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
+        LOGGER.debug "Policy deleted for ToxCreateModel URI: #{model.web_uri} with result: #{aa}"
+      rescue
+        LOGGER.warn "Policy delete error for ToxCreateModel URI: #{model.web_uri}"
+      end
+    end
       task.progress(100)
-      ""
+      url_for("/models",:full)
     end
   end
 
   def delete_dependent(uri, subjectid=nil)
     begin
-      RestClient.delete(uri, :subjectid => subjectid) if subjectid
-      RestClient.delete(uri) if !subjectid
+      OpenTox::RestClientWrapper.delete(uri, :subjectid => subjectid) if subjectid
+      OpenTox::RestClientWrapper.delete(uri) if !subjectid
     rescue
       LOGGER.warn "Can not delete uri: #{uri}"
     end
@@ -451,18 +461,10 @@ delete '/model/:id/?' do
   model = ToxCreateModel.get(params[:id])
   raise OpenTox::NotFoundError.new("Model with id: #{params[:id]} not found!") unless model
   begin
-    delete_model(model, @subjectid)   
-    model.delete
-    unless ToxCreateModel.get(params[:id])
-      begin
-        aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
-        LOGGER.debug "Policy deleted for Dataset URI: #{uri} with result: #{aa}"
-      rescue
-        LOGGER.warn "Policy delete error for Dataset URI: #{uri}"
-      end
-    end
+    delete_model(model, @subjectid)
     flash[:notice] = "#{model.name} model deleted."
   rescue
+    LOGGER.error "#{model.name} model delete error."
     flash[:notice] = "#{model.name} model delete error."
   end
   redirect url_for('/models')
