@@ -166,10 +166,10 @@ get '/predict/?' do
   haml :predict
 end
 =begin
+=end
 get '/create' do
   haml :create
 end
-=end
 get '/help' do
   haml :help
 end
