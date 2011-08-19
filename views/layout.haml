@@ -19,7 +19,7 @@
         -#%li{:class => ("selected" if /\/create|echa|ambit|feature/ =~ request.path )}
           -#= link_to "Create", "/create"
         %li{:class => ("selected" if /predict|lazar/ =~ request.path )}
-          = link_to "Input", "/predict"
+          = link_to "Prediction", "/predict"
         %li{:class => ("selected" if /models/ =~ request.path )}
           = link_to "Validation", "/models"       
         - if AA_SERVER
@@ -34,6 +34,12 @@
         - if session[:username].size > 0
           User:
           %b= session[:username]
+
+      .notice
+        This is an experimental version based on
+        %a{:href => "http://www.opentox.org", :rel => "external"} OpenTox
+        services. Please report problems and feature requests to helma[AT]in-silico.ch or use our 
+        %a{:href => 'http://github.com/opentox/toxcreate/issues', :rel => "external"} issue tracker.
 
       - if `hostname`.match(/ot-test/)
         .notice 
