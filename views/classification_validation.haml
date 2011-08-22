@@ -3,7 +3,7 @@
   = sprintf("%.2f", model.correct_predictions.to_f) if model.correct_predictions
   = '%'
 %dt
-  %a{:href => "http://en.wikipedia.org/wiki/Receiver_operating_characteristic", :rel => "external"} Weighted area under ROC:
+  %a{:href => "http://en.wikipedia.org/wiki/Receiver_operating_characteristic", :rel => "external"} Average area under ROC:
 %dd 
   = sprintf("%.3f", model.weighted_area_under_roc.to_f) if model.weighted_area_under_roc
 %dt
@@ -24,21 +24,21 @@
       %tr
         - (1..cm[0].size-1).each do |i|
           %th{:bgcolor => "#CCD2DC"}
-            = cm[0][i]
+            = cm[0][i].to_i
       %tr
         %th{:rowspan => (cm.size - 1)} Predicted
         - (0..cm[1].size-1).each do |i|
           - if i == 0
             %th{:bgcolor => "#CCD2DC"}
-              = cm[1][i]
+              = cm[1][i].to_i
           - else
-            %td= cm[1][i]
+            %td= cm[1][i].to_i
       - if cm.size > 2
         - (2..cm.size-1).each do |i|
           %tr
             - (0..cm[i].size-1).each do |j|
               - if j == 0
                 %th{:bgcolor => "#CCD2DC"}
-                  = cm[i][j]
+                  = cm[i][j].to_i
               - else
-                %td= cm[i][j]
+                %td= cm[i][j].to_i
