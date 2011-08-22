@@ -9,8 +9,9 @@ require 'ftools'
 require File.join(File.dirname(__FILE__),'model.rb')
 require File.join(File.dirname(__FILE__),'helper.rb')
 
-use Rack::Session::Cookie, :expire_after => 28800, 
-                           :secret => "ui6vaiNi-change_me"
+#moved to wrapper->environment
+#use Rack::Session::Cookie, :expire_after => 28800, 
+#                           :secret => "ui6vaiNi-change_me"
 use Rack::Flash
 
 set :lock, true
@@ -319,8 +320,7 @@ post '/models' do # create a new model
         if validation.metadata[OT.classificationStatistics]
           @model.update(:correct_predictions => validation.metadata[OT.classificationStatistics][OT.percentCorrect].to_f)
           @model.update(:confusion_matrix => validation.confusion_matrix.to_yaml)
-          #@model.update(:weighted_area_under_roc => validation.metadata[OT.classificationStatistics][OT.weightedAreaUnderRoc].to_f)
-          @model.update(:weighted_area_under_roc => validation.metadata[OT.classificationStatistics][OT.averageAreaUnderRoc].to_f)
+          @model.update(:average_area_under_roc => validation.metadata[OT.classificationStatistics][OT.averageAreaUnderRoc].to_f)
           validation.metadata[OT.classificationStatistics][OT.classValueStatistics].each do |m|
             if m[OT.classValue] =~ TRUE_REGEXP
               #HACK: estimate true feature value correctly 

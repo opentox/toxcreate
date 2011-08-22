@@ -5,7 +5,7 @@
 %dt
   %a{:href => "http://en.wikipedia.org/wiki/Receiver_operating_characteristic", :rel => "external"} Average area under ROC:
 %dd 
-  = sprintf("%.3f", model.weighted_area_under_roc.to_f) if model.weighted_area_under_roc
+  = sprintf("%.3f", model.average_area_under_roc.to_f) if model.average_area_under_roc
 %dt
   %a{:href => "http://en.wikipedia.org/wiki/Sensitivity_and_specificity", :rel => "external"} Specificity:
 %dd= sprintf("%.3f", model.specificity.to_f) if model.specificity

@@ -1,35 +1,5 @@
 helpers do
 
-  def login(username, password)
-    logout
-    session[:subjectid] = OpenTox::Authorization.authenticate(username, password)
-    #LOGGER.debug "ToxCreate login user #{username} with subjectid: " + session[:subjectid].to_s
-    if session[:subjectid] != nil
-      session[:username] = username
-      return true
-    else
-      session[:username] = ""
-      return false
-    end
-  end
-
-  def logout
-    if session[:subjectid] != nil
-      session[:subjectid] = nil
-      session[:username] = ""
-      return true
-    end
-    return false
-  end
-
-  def logged_in()
-    return true if !AA_SERVER
-    if session[:subjectid] != nil
-      return OpenTox::Authorization.is_token_valid(session[:subjectid])
-    end
-    return false
-  end
-
   def is_authorized(uri, action)
     if OpenTox::Authorization.server && session[:subjectid] != nil
       return OpenTox::Authorization.authorized?(uri, action, session[:subjectid])
