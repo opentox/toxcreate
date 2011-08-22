@@ -77,8 +77,7 @@ $(function() {
         if (progress == "100") return -1;         
         
         $("div#model_" + id + "_progress").progressbar("value", parseInt(progress)); 
-        $("div#model_" + id + "_progress").attr({title: parseInt(progress) + "%", alt: parseInt(progress) + "%"});
-        //$("div#model_" + id + "_progress").attr("alt", parseInt(progress) + "%");
+        $("div#model_" + id + "_progress").attr({title: parseInt(progress) + "%"});
       },
       error: function(data) {
         id = -1;
@@ -208,6 +207,7 @@ jQuery.fn.deleteModel = function(type, options) {
     if(confirm(opts.confirm_message)) {
       $("div#model_" + opts.id).fadeTo("slow",0.5);
       $("span#model_" + opts.id + "_status").html("Deleting");
+      $("a#delete_" + opts.id).html("");
       $.ajax({
          type: opts.method,
          url:  opts.action,
