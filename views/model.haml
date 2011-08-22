@@ -24,7 +24,7 @@
                 #{js}
               });
               
-            %div{:id => "model_#{model.id}_progress", :class => "model_progress", :title => "#{percentage_completed}%", :alt => "#{percentage_completed}%"}
+            %div{:id => "model_#{model.id}_progress", :class => "model_progress", :title => "#{percentage_completed}%"}
               //= haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false        
        
         %span
@@ -41,7 +41,7 @@
       - if CONFIG[:logger]=="debug"
         %dt Task:
         %dd
-          %a{:href => "#{model.task_uri}", :rel => "external"}
+          %a{:href => "#{model.task_uri}", :id => "model_#{model.id}_task_link", :rel => "external"}
             = model.task_uri
       - if model.warnings
         %dt Warnings:
