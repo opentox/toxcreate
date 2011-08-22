@@ -24,13 +24,13 @@
       %tr
         - (1..cm[0].size-1).each do |i|
           %th{:bgcolor => "#CCD2DC"}
-            = cm[0][i].to_i
+            = cm[0][i]
       %tr
         %th{:rowspan => (cm.size - 1)} Predicted
         - (0..cm[1].size-1).each do |i|
           - if i == 0
             %th{:bgcolor => "#CCD2DC"}
-              = cm[1][i].to_i
+              = cm[1][i]
           - else
             %td= cm[1][i].to_i
       - if cm.size > 2
@@ -39,6 +39,6 @@
             - (0..cm[i].size-1).each do |j|
               - if j == 0
                 %th{:bgcolor => "#CCD2DC"}
-                  = cm[i][j].to_i
+                  = cm[i][j]
               - else
                 %td= cm[i][j].to_i
