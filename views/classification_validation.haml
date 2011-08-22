@@ -5,13 +5,24 @@
 %dt
   %a{:href => "http://en.wikipedia.org/wiki/Receiver_operating_characteristic", :rel => "external"} Average area under ROC:
 %dd 
-  = sprintf("%.3f", model.average_area_under_roc.to_f) if model.average_area_under_roc
+  - if model.average_area_under_roc
+    = sprintf("%.3f", model.average_area_under_roc.to_f)
+  - else
+    = 'NA'
 %dt
   %a{:href => "http://en.wikipedia.org/wiki/Sensitivity_and_specificity", :rel => "external"} Specificity:
-%dd= sprintf("%.3f", model.specificity.to_f) if model.specificity
+%dd
+  - if model.specificity
+    = sprintf("%.3f", model.specificity.to_f)
+  - else
+    = 'NA'
 %dt
   %a{:href => "http://en.wikipedia.org/wiki/Sensitivity_and_specificity", :rel => "external"} Sensitivity:
-%dd= sprintf("%.3f", model.sensitivity.to_f) if model.sensitivity
+%dd
+  - if model.sensitivity
+    = sprintf("%.3f", model.sensitivity.to_f)
+  - else
+    = 'NA'
 %dt
   %a{:href => "http://en.wikipedia.org/wiki/Confusion_matrix", :rel => "external"} Confusion Matrix:
 - if model.confusion_matrix
