@@ -320,7 +320,7 @@ post '/models' do # create a new model
         if validation.metadata[OT.classificationStatistics]
           @model.update(:correct_predictions => validation.metadata[OT.classificationStatistics][OT.percentCorrect].to_f)
           @model.update(:confusion_matrix => validation.confusion_matrix.to_yaml)
-          @model.update(:weighted_area_under_roc => validation.metadata[OT.classificationStatistics][OT.weightedAreaUnderRoc].to_f)
+          @model.update(:average_area_under_roc => validation.metadata[OT.classificationStatistics][OT.averageAreaUnderRoc].to_f)
           validation.metadata[OT.classificationStatistics][OT.classValueStatistics].each do |m|
             if m[OT.classValue] =~ TRUE_REGEXP
               #HACK: estimate true feature value correctly 
