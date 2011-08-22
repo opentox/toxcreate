@@ -92,8 +92,7 @@ end
 get '/models/?' do
   @models = ToxCreateModel.all.sort(:order => "DESC")
   @models.each{|m| raise "internal redis error: model is nil" unless m}
-  subjectstring = @subjectid ? "?subjectid=#{CGI.escape(@subjectid)}" : ""
-  haml :models, :locals=>{:models=>@models, :subjectstring => subjectstring}
+  haml :models, :locals=>{:models=>@models}
 end
 
 get '/model/:id/status/?' do
@@ -156,13 +155,12 @@ end
 get '/model/:id/:view/?' do
   response['Content-Type'] = 'text/plain'
   model = ToxCreateModel.get(params[:id])
-  subjectstring = @subjectid ? "?subjectid=#{CGI.escape(@subjectid)}" : ""
   begin
     case params[:view]
       when "model"
-        haml :model, :locals=>{:model=>model,:subjectstring => subjectstring}, :layout => false
+        haml :model, :locals=>{:model=>model}, :layout => false
       when /validation/
-        haml :validation, :locals=>{:model=>model,:subjectstring => subjectstring}, :layout => false
+        haml :validation, :locals=>{:model=>model}, :layout => false
       else
         return "unable to render model: id #{params[:id]}, view #{params[:view]}"
     end

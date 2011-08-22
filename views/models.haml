@@ -3,7 +3,7 @@
 :javascript
   $(function() {
     if(#{stati != 0}) { 
-      setTimeout('checkStati("#{stati_to_check}", "#{subjectstring}")',5000);
+      setTimeout('checkStati("#{stati_to_check}", "")',5000);
     }
     var reload_validation = true;
   });
@@ -20,6 +20,6 @@
 
 - if @models
   - @models.each do |model|
-    = haml :model, :locals=>{:model=>model,:subjectstring=>subjectstring}, :layout => false 
--if @models.size == 0 
+    = haml :model, :locals=>{:model=>model}, :layout => false
+-if @models.size == 0
   .notice There are currently no models. You have to create a model first.
