@@ -9,8 +9,9 @@ require 'ftools'
 require File.join(File.dirname(__FILE__),'model.rb')
 require File.join(File.dirname(__FILE__),'helper.rb')
 
-use Rack::Session::Cookie, :expire_after => 28800, 
-                           :secret => "ui6vaiNi-change_me"
+#moved to wrapper->environment
+#use Rack::Session::Cookie, :expire_after => 28800, 
+#                           :secret => "ui6vaiNi-change_me"
 use Rack::Flash
 
 set :lock, true
