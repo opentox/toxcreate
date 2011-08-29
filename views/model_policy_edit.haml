@@ -1,52 +1,54 @@
 .permissions
+%h2
+  = model.name
+%table
+  %tr
+    %td
+      Permissions for:
+      %b= model.web_uri
+  %tr
+    %td
+      User:
+      %b= session[:username]
+      has all permissions.
+ 
   %table
     %tr
       %td
-        Permissions for:
-        %b= model.web_uri
-    %tr
-      %td
-        User:
-        %b= session[:username]
-        has all permissions.
-   
+        current groups:
+        - policies.names.each do |n|
+          - js = "$('#policy_update_#{model.id}_#{n}').updatePolicy({id: '#{model.id}', mode: 'update', groupname: '#{policies.policies[n].group}', policyname: '#{n}'});\n  "
+          :javascript
+            $(function() {
+              #{js}
+            });
+          %form{:name => "form_#{n}", :action => url_for("/policy/#{n}"), :method => "post", :enctype => "multipart/form-data", :id => "form_#{n}"}
+            %b= policies.policies[n].group
+            %input{:type => 'hidden', :name => "policyname", :value => n}
+            %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
+            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "not set", :checked => policies.policies[n].rule.read == nil} not set
+            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "read", :checked => policies.policies[n].rule.read == true} read
+            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "readwrite", :checked => policies.policies[n].rule.readwrite == true} read/write
+            %input{ :type => 'submit', :value => "update", :id=> "policy_update_#{model.id}_#{n}", :class => "policy_button"}
+             
+              
     %table
       %tr
         %td
-          current groups:
-          - policies.names.each do |n|
-            - js = "$('#policy_update_#{model.id}_#{n}').updatePolicy({id: '#{model.id}', mode: 'update', groupname: '#{policies.policies[n].group}', policyname: '#{n}'});\n  "
+          Add to group:
+          %br
+          - groups.each do |g|
+            - js = "$('#policy_add_#{model.id}_#{g}').addPolicy({id: '#{model.id}', mode: 'add', groupname: '#{g}'});\n  "
             :javascript
               $(function() {
                 #{js}
               });
-            %form{:name => "form_#{n}", :action => url_for("/policy/#{n}"), :method => "post", :enctype => "multipart/form-data", :id => "form_#{n}"}
-              %b= policies.policies[n].group
-              %input{:type => 'hidden', :name => "policyname", :value => n}
+            %form{:name => "form_#{g}", :action => url_for("/policy"), :method => "post", :enctype => "multipart/form-data", :id => "form_#{g}"}
+              %b= g
+              %input{:type => 'hidden', :name => 'groupname', :value => g}
               %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
-              %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "not set", :checked => policies.policies[n].rule.read == nil} not set
-              %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "read", :checked => policies.policies[n].rule.read == true} read
-              %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "readwrite", :checked => policies.policies[n].rule.readwrite == true} read/write
-              %input{ :type => 'submit', :value => "update", :id=> "policy_update_#{model.id}_#{n}", :class => "policy_button"}
-               
-                
-      %table
-        %tr
-          %td
-            Add to group:
-            %br
-            - groups.each do |g|
-              - js = "$('#policy_add_#{model.id}_#{g}').addPolicy({id: '#{model.id}', mode: 'add', groupname: '#{g}'});\n  "
-              :javascript
-                $(function() {
-                  #{js}
-                });
-              %form{:name => "form_#{g}", :action => url_for("/policy"), :method => "post", :enctype => "multipart/form-data", :id => "form_#{g}"}
-                %b= g
-                %input{:type => 'hidden', :name => 'groupname', :value => g}
-                %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
-                %input{:type => 'radio', :name => "selection[#{g}]", :value => "not set", :checked => "checked"} not set
-                %input{:type => 'radio', :name => "selection[#{g}]", :value => "read"} read
-                %input{:type => 'radio', :name => "selection[#{g}]", :value => "readwrite"} readwrite
-                %input{ :type => 'submit', :value => "add", :id=> "policy_add_#{model.id}_#{g}", :class => "policy_button", :name => "form_#{g}"}
+              %input{:type => 'radio', :name => "selection[#{g}]", :value => "not set", :checked => "checked"} not set
+              %input{:type => 'radio', :name => "selection[#{g}]", :value => "read"} read
+              %input{:type => 'radio', :name => "selection[#{g}]", :value => "readwrite"} readwrite
+              %input{ :type => 'submit', :value => "add", :id=> "policy_add_#{model.id}_#{g}", :class => "policy_button", :name => "form_#{g}"}
 
