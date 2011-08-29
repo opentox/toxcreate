@@ -5,51 +5,13 @@
     #{js}
   });
   
-%div{:id => "model_#{model.id}"}
-  %div{:id => "model_#{model.id}_name"}
-    = haml :model_name, :locals=>{:model=>model}, :layout => false
-  .model
-    %dl
-      %dt Status:
-      %dd
-        %span{:id => "model_#{model.id}_status", :class => "model_status"}
-          = haml :model_status, :locals=>{:model=>model}, :layout => false
-        - if model.task_uri && model.status !~ /Completed|Cancelled|Error|Deleting/
-          - if (task = OpenTox::Task.exist?(model.task_uri))
-            %input{:type => 'hidden', :id => "model_#{model.id}_task", :value => "#{model.task_uri}"}
-            - percentage_completed = task.metadata[OT.percentageCompleted].to_i
-            - js = "$('#model_#{model.id}_progress').progressbar({ value: #{percentage_completed} });"
-            :javascript
-              $(function() {
-                #{js}
-              });
-              
-            %div{:id => "model_#{model.id}_progress", :class => "model_progress", :title => "#{percentage_completed}%"}
-              //= haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false        
-        - if is_authorized(model.web_uri, "DELETE")
-          %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete_link'} 
-            - if model.status =~ /Completed|Error|Cancelled/ 
-              &nbsp;(delete)
-            - else
-              &nbsp;(stop)
-        %span
-          %br
-        
-      %dt Started:
-      %dd= Time.parse(model.created_at.to_s).strftime("%m/%d/%Y - %I:%M:%S%p %Z") if model.created_at
-      - if model.nr_compounds
-        %dt Training compounds:
-        %dd= model.nr_compounds 
-      - if model.error_messages
-        %dt Errors:
-        %dd= model.error_messages
-      - if CONFIG[:logger]=="debug"
-        %dt Task:
-        %dd
-          %a{:href => "#{model.task_uri}", :id => "model_#{model.id}_task_link", :rel => "external"}
-            = model.task_uri
-      - if model.warnings
-        %dt Warnings:
+- if is_authorized(model.web_uri, "DELETE")
+  %div{:id => "model_#{model.id}"}
+    %div{:id => "model_#{model.id}_name"}
+      = haml :model_name, :locals=>{:model=>model}, :layout => false
+    .model
+      %dl
+        %dt Status:
         %dd
           %span{:id => "model_#{model.id}_status", :class => "model_status"}
             = haml :model_status, :locals=>{:model=>model}, :layout => false
@@ -68,9 +30,9 @@
           - if is_authorized(model.web_uri, "DELETE")
             %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete_link'} 
               - if model.status =~ /Completed|Error|Cancelled/ 
-                (delete)
+                &nbsp;(delete)
               - else
-                (stop)
+                &nbsp;(stop)
           %span
             %br
           
@@ -90,46 +52,85 @@
         - if model.warnings
           %dt Warnings:
           %dd
-            %a{:href => "#", :id => "show_model_#{model.id}_warnings"} show
-            %div{:id => "model_#{model.id}_warnings", :style => "display: none;"}= model.warnings
-        %dt Algorithm:
-        %dd= toggle_link("#lazar_description","lazar")
-        - if model.type
-          %dt Type:
-          %dd= toggle_link("##{model.type}","#{model.type}")
-        %dt Descriptors:
-        %dd
-          - if model.training_dataset.match(/ambit/i)
-            %a{:href => "#{model.training_dataset}", :rel => "external"} Ambit database
-          - else
-            %a{:href => "#{model.training_dataset}.xls"} Excel sheet
+            %span{:id => "model_#{model.id}_status", :class => "model_status"}
+              = haml :model_status, :locals=>{:model=>model}, :layout => false
+            - if model.task_uri && model.status !~ /Completed|Cancelled|Error|Deleting/
+              - if (task = OpenTox::Task.exist?(model.task_uri))
+                %input{:type => 'hidden', :id => "model_#{model.id}_task", :value => "#{model.task_uri}"}
+                - percentage_completed = task.metadata[OT.percentageCompleted].to_i
+                - js = "$('#model_#{model.id}_progress').progressbar({ value: #{percentage_completed} });"
+                :javascript
+                  $(function() {
+                    #{js}
+                  });
+                  
+                %div{:id => "model_#{model.id}_progress", :class => "model_progress", :title => "#{percentage_completed}%"}
+                  //= haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false        
+            - if is_authorized(model.web_uri, "DELETE")
+              %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete_link'} 
+                - if model.status =~ /Completed|Error|Cancelled/ 
+                  (delete)
+                - else
+                  (stop)
+            %span
+              %br
+            
+          %dt Started:
+          %dd= Time.parse(model.created_at.to_s).strftime("%m/%d/%Y - %I:%M:%S%p %Z") if model.created_at
+          - if model.nr_compounds
+            %dt Training compounds:
+            %dd= model.nr_compounds 
+          - if model.error_messages
+            %dt Errors:
+            %dd= model.error_messages
+          - if CONFIG[:logger]=="debug"
+            %dt Task:
+            %dd
+              %a{:href => "#{model.task_uri}", :id => "model_#{model.id}_task_link", :rel => "external"}
+                = model.task_uri
+          - if model.warnings
+            %dt Warnings:
+            %dd
+              %a{:href => "#", :id => "show_model_#{model.id}_warnings"} show
+              %div{:id => "model_#{model.id}_warnings", :style => "display: none;"}= model.warnings
+          %dt Algorithm:
+          %dd= toggle_link("#lazar_description","lazar")
+          - if model.type
+            %dt Type:
+            %dd= toggle_link("##{model.type}","#{model.type}")
+          %dt Descriptors:
+          %dd
+            - if model.training_dataset.match(/ambit/i)
+              %a{:href => "#{model.training_dataset}", :rel => "external"} Ambit database
+            - else
+              %a{:href => "#{model.training_dataset}.xls"} Excel sheet
+              ,
+              -#%a{:href => "#{model.training_dataset}.rdf"} RDF/XML
+              -#%em (experts) ,
+              %a{:href => "#{model.training_dataset}.sdf" } SDF
+              ,
+              %a{:href => "#{model.training_dataset}.yaml" } YAML
+              %em  (experts)
+        - if model.feature_dataset
+          %dt Feature dataset:
+          %dd
+            -#%a{:href => "#{model.feature_dataset}.rdf"} RDF/XML
+            -#,
+            %a{:href => "#{model.feature_dataset}.xls"} Excel sheet
             ,
-            -#%a{:href => "#{model.training_dataset}.rdf"} RDF/XML
-            -#%em (experts) ,
-            %a{:href => "#{model.training_dataset}.sdf" } SDF
+            %a{:href => "#{model.feature_dataset}.sdf"} SDF
             ,
-            %a{:href => "#{model.training_dataset}.yaml" } YAML
+            %a{:href => "#{model.feature_dataset}.yaml"} YAML
             %em  (experts)
-      - if model.feature_dataset
-        %dt Feature dataset:
-        %dd
-          -#%a{:href => "#{model.feature_dataset}.rdf"} RDF/XML
-          -#,
-          %a{:href => "#{model.feature_dataset}.xls"} Excel sheet
-          ,
-          %a{:href => "#{model.feature_dataset}.sdf"} SDF
-          ,
-          %a{:href => "#{model.feature_dataset}.yaml"} YAML
-          %em  (experts)
-      - if model.uri
-        %dt Model:
-        %dd{:id => "model_qmrf_#{model.id}"}
-          %input{ :id => "model_validation_qmrf_#{model.id}", :type => "hidden", :value => "#{model.validation_qmrf_status}", :class => "model_validation_qmrf" }
-          -#%a{:href => "#{model.uri}.rdf"} RDF/XML
-          -#,
-          - if model.validation_qmrf_uri
-            %a{:href => File.join(model.validation_qmrf_uri,"editor")} QMRF Editor, 
-          %a{:href => "#{model.uri}.yaml"} YAML
-          %em  (experts, models cannot be represented in Excel)
+        - if model.uri
+          %dt Model:
+          %dd{:id => "model_qmrf_#{model.id}"}
+            %input{ :id => "model_validation_qmrf_#{model.id}", :type => "hidden", :value => "#{model.validation_qmrf_status}", :class => "model_validation_qmrf" }
+            -#%a{:href => "#{model.uri}.rdf"} RDF/XML
+            -#,
+            - if model.validation_qmrf_uri
+              %a{:href => File.join(model.validation_qmrf_uri,"editor")} QMRF Editor, 
+            %a{:href => "#{model.uri}.yaml"} YAML
+            %em  (experts, models cannot be represented in Excel)
 
-    = haml :validation, :locals=>{:model=>model}, :layout => false
+      = haml :validation, :locals=>{:model=>model}, :layout => false
