@@ -8,5 +8,5 @@
   - if is_authorized(model.web_uri, "PUT")
     %span{:class => "edit_button"}      
       (
-      %a{:href => url_for("/model/#{model.id}/name?mode=edit"), :id => "edit_#{model.id}"} edit
+      %a{:href => url_for("/model/#{model.id}/name?mode=edit"), :id => "edit_#{model.id}"} edit name
       )
