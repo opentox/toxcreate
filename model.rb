@@ -31,7 +31,7 @@ class ToxCreateModel < Ohm::Model
 	attribute :nr_compounds
   attribute :nr_predictions
   attribute :correct_predictions
-	attribute :weighted_area_under_roc
+	attribute :average_area_under_roc
 	attribute :sensitivity
 	attribute :specificity
 	attribute :r_square

@@ -18,20 +18,20 @@ $(function() {
     return this.replace(/^\s+|\s+$/g, '');
   }
 
-  checkStati = function(stati, subjectstr) {
+  checkStati = function(stati) {
     stati = stati.split(", ");
     $("body")
     var newstati = new Array;
     $.each(stati, function(){
-      checkProgress(this, subjectstr);
-      if(checkStatus(this, subjectstr) > 0) newstati.push(this);
+      checkProgress(this);
+      if(checkStatus(this) > 0) newstati.push(this);
     });  
-    if (newstati.length > 0) var statusCheck = setTimeout('checkStati("' + newstati.join(", ") + '", "' + subjectstr + '")',10000);
+    if (newstati.length > 0) var statusCheck = setTimeout('checkStati("' + newstati.join(", ") + '")',10000);
   };
   
-  checkStatus = function(id, subjectstr) {
+  checkStatus = function(id) {
     if(id == "") return -1; 
-    var opts = {method: 'get', action: 'model/' + id + '/status' + subjectstr, id: id};
+    var opts = {method: 'get', action: 'model/' + id + '/status', id: id};
     var status_changed = $.ajax({
       type: opts.method,
       url: opts.action,
@@ -62,7 +62,7 @@ $(function() {
   };
   
   
-  checkProgress = function(id, subjectstr) {
+  checkProgress = function(id) {
     var task = $("input#model_" + id + "_task").attr('value');
     var opts = {action: task + "/percentageCompleted" , id: id};
     var progress_changed = $.ajax({
@@ -305,6 +305,7 @@ jQuery.fn.deleteModel = function(type, options) {
     if(confirm(opts.confirm_message)) {
       $("div#model_" + opts.id).fadeTo("slow",0.5);
       $("span#model_" + opts.id + "_status").html("Deleting");
+      $("a#delete_" + opts.id).html("");
       $.ajax({
          type: opts.method,
          url:  opts.action,
