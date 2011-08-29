@@ -31,11 +31,12 @@
           Choose one or more prediction models
         %br
         - @models.each do |model|
-          %input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => "model#{model.id}", :disabled => false}
-          %label{:for => "model#{model.id}"}
-            = model.name
-          -#%input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id, :disabled => !is_authorized(model.uri, "GET")}            
-          %br
+          - if is_authorized(model.web_uri, "DELETE")
+            %input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => "model#{model.id}", :disabled => false}
+            %label{:for => "model#{model.id}"}
+              = model.name
+            -#%input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => model.id, :disabled => !is_authorized(model.uri, "GET")}            
+            %br
       %br
       %input{:type => 'hidden', :name => 'subjectid', :id => 'subjectid', :value => session[:subjectid]}
       %input{ :type => "submit", :value => "Predict", :onclick => "getsmiles();"}
