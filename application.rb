@@ -90,7 +90,20 @@ get '/login' do
 end
 
 get '/models/?' do
-  @models = ToxCreateModel.all.sort(:order => "DESC")
+  @page = params[:page] ? params[:page].to_i : 0
+  order = params["order"] == "ASC" ? "ASC" : "DESC"
+  params["order"] = order
+  sort_by = params["sort_by"]
+  if sort_by
+    case sort_by
+    when "name", "created_at", "type", "id"
+      @models = ToxCreateModel.all.sort_by(sort_by.to_sym, :order => "#{order} ALPHA")
+    end
+  else
+    params["sort_by"] = "id"
+  end
+
+  @models = ToxCreateModel.all.sort(:order => "DESC") unless @models
   @models.each{|m| raise "internal redis error: model is nil" unless m}
   haml :models, :locals=>{:models=>@models}
 end
