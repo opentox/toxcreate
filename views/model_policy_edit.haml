@@ -15,40 +15,70 @@
   %table
     %tr
       %td
-        current groups:
-        - policies.names.each do |n|
+        Model address:
+        %b= model.web_uri
+        %br
+        Model owner:
+        %b= session[:username]
+        
+   
+    %tr
+      %td
+        Group(s) you have joined:
+      %td
+        .info_update
+          Here you can change external(group) access for your model. First select an option then click on "update".
+    %tr
+    - policies.names.each do |n|
+      %tr
+        %td  
+          %b= policies.policies[n].group
           - js = "$('#policy_update_#{model.id}_#{n}').updatePolicy({id: '#{model.id}', mode: 'update', groupname: '#{policies.policies[n].group}', policyname: '#{n}'});\n  "
           :javascript
             $(function() {
               #{js}
             });
           %form{:name => "form_#{n}", :action => url_for("/policy/#{n}"), :method => "post", :enctype => "multipart/form-data", :id => "form_#{n}"}
-            %b= policies.policies[n].group
-            %input{:type => 'hidden', :name => "policyname", :value => n}
+            %input{:type => 'hidden', :name => 'policyname', :value => n}
             %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
-            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "not set", :checked => policies.policies[n].rule.read == nil} not set
-            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "read", :checked => policies.policies[n].rule.read == true} read
-            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "readwrite", :checked => policies.policies[n].rule.readwrite == true} read/write
+            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "not set", :checked => policies.policies[n].rule.read == nil} no group membership
+            %br
+            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "read", :checked => policies.policies[n].rule.read == true} share with this group
+            %br
+            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "readwrite", :checked => policies.policies[n].rule.readwrite == true} share with this group and allow members to delete the model
+            %br
             %input{ :type => 'submit', :value => "update", :id=> "policy_update_#{model.id}_#{n}", :class => "policy_button"}
-             
-              
-    %table
+            %br
+            %br
+      
+       
+            
+    %tr
+      %td
+        Add to group:
+      %td
+        .info_add
+          Here you can share your model for external(group) access. Choose a group and option then click "add".
+    %tr
+    - groups.each do |g|
       %tr
         %td
-          Add to group:
-          %br
-          - groups.each do |g|
-            - js = "$('#policy_add_#{model.id}_#{g}').addPolicy({id: '#{model.id}', mode: 'add', groupname: '#{g}'});\n  "
-            :javascript
-              $(function() {
-                #{js}
-              });
-            %form{:name => "form_#{g}", :action => url_for("/policy"), :method => "post", :enctype => "multipart/form-data", :id => "form_#{g}"}
-              %b= g
-              %input{:type => 'hidden', :name => 'groupname', :value => g}
-              %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
-              %input{:type => 'radio', :name => "selection[#{g}]", :value => "not set", :checked => "checked"} not set
-              %input{:type => 'radio', :name => "selection[#{g}]", :value => "read"} read
-              %input{:type => 'radio', :name => "selection[#{g}]", :value => "readwrite"} readwrite
-              %input{ :type => 'submit', :value => "add", :id=> "policy_add_#{model.id}_#{g}", :class => "policy_button", :name => "form_#{g}"}
+          %b= g
+          - js = "$('#policy_add_#{model.id}_#{g}').addPolicy({id: '#{model.id}', mode: 'add', groupname: '#{g}'});\n  "
+          :javascript
+            $(function() {
+              #{js}
+            });
+          %form{:name => "form_#{g}", :action => url_for("/policy"), :method => "post", :enctype => "multipart/form-data", :id => "form_#{g}"}
+            %input{:type => 'hidden', :name => 'groupname', :value => g}
+            %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
+            %input{:type => 'radio', :name => "selection[#{g}]", :value => "not set", :checked => "checked"} no membership with this group
+            %br
+            %input{:type => 'radio', :name => "selection[#{g}]", :value => "read"} share with this group
+            %br
+            %input{:type => 'radio', :name => "selection[#{g}]", :value => "readwrite"} share with this group and allow members to delete the model
+            %br
+            %input{ :type => 'submit', :value => "add", :id=> "policy_add_#{model.id}_#{g}", :class => "policy_button", :name => "form_#{g}"}
+            %br
+            %br
 
