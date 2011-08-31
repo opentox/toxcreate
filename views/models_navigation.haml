@@ -1,0 +1,61 @@
+.models_navigation
+
+  %form{:name => "nav", :action => url_for('/models'), :method => "get", :id => "nav"}
+    %input{:type => :hidden, :name => :sort_by, :id => "sort_by", :value => params[:sort_by]}
+    %input{:type => :hidden, :name => :order, :id => "order", :value => params[:order]}
+    %input{:type => :hidden, :name => :subjectid, :value => session[:subjectid]}    
+    %input{:type => :hidden, :name => :page, :id => "page", :value => params[:page]}
+
+    Models are sorted by:
+    - ["id","created_at","name","type"].each do |s|    
+      - idname = s == "created_at" ? "date" : s 
+      - if params[:sort_by] == s
+        %div{:id => idname, :class => "active"}
+          %span="#{idname}"
+          - if params[:order] == "ASC"
+            #up{:class => "link"}= "&dArr;"
+          - else
+            #down{:class => "link"}= "&uArr;"
+      - else
+        %div{:id => idname, :class => "link"}="#{idname}"
+    |
+    models:
+
+    #prev= "prev" unless @page.to_i == 0
+
+    - if @models.size < 5*@page+5
+      - last = @models.size 
+    - else 
+      - last = 5*@page+5
+
+    = "(#{5*@page+1}-#{last}/#{@models.size})" 
+
+    #next= "next" unless 5*@page.to_i+5 >= @models.size
+
+    - js = ""
+    - ["id","created_at","name","type"].each do |s|
+      - idname = s == "created_at" ? "date" : s
+      - js += "$('##{idname}').click(function() \{ \n "
+      - js += "  $('#sort_by').val('#{s}');\n "
+      - js += "  $('#nav').submit();\n "
+      - js += "});\n "
+
+    :javascript
+      $("#prev").click(function() {
+        $("#page").val(#{@page-1});
+        $("#nav").submit();
+      });
+      $("#next").click(function() {
+        $("#page").val(#{@page+1});
+        $("#nav").submit();
+      });
+      #{js}
+      $("#down").click(function() {
+        $("#order").val("ASC");
+        $("#nav").submit();
+      });
+      $("#up").click(function() {
+        $("#order").val("DESC");
+        $("#nav").submit();
+      });
+      

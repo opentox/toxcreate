@@ -17,9 +17,13 @@
 = haml :regression, :layout => false
 = haml :similarity, :layout => false
 = haml :significant_fragments, :layout => false
+-# - if is_authorized(model.web_uri, "GET")
 
-- if @models
-  - @models.each do |model|
+- first = 5*@page
+- last = first+4
+= models_navigation
+- if @models[first..last]
+  - @models[first..last].each do |model|
     = haml :model, :locals=>{:model=>model}, :layout => false
 -if @models.size == 0
   .notice There are currently no models. You have to create a model first.
