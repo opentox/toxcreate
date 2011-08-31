@@ -96,8 +96,10 @@ get '/models/?' do
   sort_by = params["sort_by"]
   if sort_by
     case sort_by
-    when "name", "created_at", "type", "id"
+    when "name", "created_at", "type"
       @models = ToxCreateModel.all.sort_by(sort_by.to_sym, :order => "#{order} ALPHA")
+    when "id"
+      @models = ToxCreateModel.all.sort(:order => "#{order}")
     end
   else
     params["sort_by"] = "id"
