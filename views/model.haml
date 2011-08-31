@@ -5,7 +5,7 @@
     #{js}
   });
   
-- if is_authorized(model.web_uri, "DELETE")
+- if is_authorized(model.web_uri, "PUT")
   %div{:id => "model_#{model.id}"}
     %div{:id => "model_#{model.id}_name"}
       = haml :model_name, :locals=>{:model=>model}, :layout => false
@@ -66,7 +66,7 @@
                   
                 %div{:id => "model_#{model.id}_progress", :class => "model_progress", :title => "#{percentage_completed}%"}
                   //= haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false        
-            - if is_authorized(model.web_uri, "DELETE")
+            - if is_authorized(model.web_uri, "PUT")
               %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete_link'} 
                 - if model.status =~ /Completed|Error|Cancelled/ 
                   (delete)
