@@ -1,33 +1,17 @@
-.permissions
-%h2
-  = model.name
-%table
+%table{:id => "permissions"}
   %tr
     %td
-      Permissions for:
-      %b= model.web_uri
-  %tr
-    %td
-      User:
+      -#Model address:
+      -#%b= model.web_uri
+      -#%br
+      Model owner:
       %b= session[:username]
-      has all permissions.
- 
-  %table
-    %tr
+  - if policies.names.empty? != true
+    %tr{:id => "info_update"}
       %td
-        Model address:
-        %b= model.web_uri
-        %br
-        Model owner:
-        %b= session[:username]
-        
-   
-    %tr
-      %td
-        Group(s) you have joined:
-      %td
-        .info_update
-          Here you can change external(group) access for your model. First select an option then click on "update".
+        You have shared your model to the following group(s). You can quit the membership by click on "not set" or give group members the option to delete your model.
+        %a{:href=> "/toxcreate/models"} [exit]
+    
     %tr
     - policies.names.each do |n|
       %tr
@@ -41,44 +25,39 @@
           %form{:name => "form_#{n}", :action => url_for("/policy/#{n}"), :method => "post", :enctype => "multipart/form-data", :id => "form_#{n}"}
             %input{:type => 'hidden', :name => 'policyname', :value => n}
             %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
-            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "not set", :checked => policies.policies[n].rule.read == nil} no group membership
-            %br
-            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "read", :checked => policies.policies[n].rule.read == true} share with this group
-            %br
-            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :value => "readwrite", :checked => policies.policies[n].rule.readwrite == true} share with this group and allow members to delete the model
-            %br
+            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :id => "not#{model.id}_#{n}", :value => "not set", :checked => policies.policies[n].rule.read == nil}
+            %label{:for => "not#{model.id}_#{n}"} not set
+            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :id => "read#{model.id}_#{n}", :value => "read", :checked => policies.policies[n].rule.read == true}
+            %label{:for => "read#{model.id}_#{n}"} read
+            %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :id => "write#{model.id}_#{n}", :value => "readwrite", :checked => policies.policies[n].rule.readwrite == true}
+            %label{:for => "write#{model.id}_#{n}"} read/delete
             %input{ :type => 'submit', :value => "update", :id=> "policy_update_#{model.id}_#{n}", :class => "policy_button"}
-            %br
-            %br
-      
-       
-            
-    %tr
-      %td
-        Add to group:
-      %td
-        .info_add
-          Here you can share your model for external(group) access. Choose a group and option then click "add".
-    %tr
-    - groups.each do |g|
-      %tr
-        %td
-          %b= g
-          - js = "$('#policy_add_#{model.id}_#{g}').addPolicy({id: '#{model.id}', mode: 'add', groupname: '#{g}'});\n  "
-          :javascript
-            $(function() {
-              #{js}
-            });
-          %form{:name => "form_#{g}", :action => url_for("/policy"), :method => "post", :enctype => "multipart/form-data", :id => "form_#{g}"}
-            %input{:type => 'hidden', :name => 'groupname', :value => g}
-            %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
-            %input{:type => 'radio', :name => "selection[#{g}]", :value => "not set", :checked => "checked"} no membership with this group
-            %br
-            %input{:type => 'radio', :name => "selection[#{g}]", :value => "read"} share with this group
-            %br
-            %input{:type => 'radio', :name => "selection[#{g}]", :value => "readwrite"} share with this group and allow members to delete the model
-            %br
-            %input{ :type => 'submit', :value => "add", :id=> "policy_add_#{model.id}_#{g}", :class => "policy_button", :name => "form_#{g}"}
-            %br
-            %br
 
+
+  
+     
+          
+  %tr{:id=>"info_add"}
+    %td
+      Add your model to one or more registered groups if you like to share your model "read" gives access, "read/delete" allows group members to delete your model.
+      %a{:href=> "/toxcreate/models"} [exit]
+  %tr
+  - groups.each do |g|
+    %tr
+      %td
+        %b= g
+        - js = "$('#policy_add_#{model.id}_#{g}').addPolicy({id: '#{model.id}', mode: 'add', groupname: '#{g}'});\n  "
+        :javascript
+          $(function() {
+            #{js}
+          });
+        %form{:name => "form_#{g}", :action => url_for("/policy"), :method => "post", :enctype => "multipart/form-data", :id => "form_#{g}"}
+          %input{:type => 'hidden', :name => 'groupname', :value => g}
+          %input{:type => 'hidden', :name => 'id', :id => 'id', :value => model.id}
+          %input{:type => 'radio', :name => "selection[#{g}]", :id => "not#{model.id}_#{g}", :value => "not set", :checked => "checked"}
+          %label{:for => "not#{model.id}_#{g}"} not set
+          %input{:type => 'radio', :name => "selection[#{g}]", :id => "read#{model.id}_#{g}", :value => "read"}
+          %label{:for => "read#{model.id}_#{g}"} read
+          %input{:type => 'radio', :name => "selection[#{g}]", :id => "write#{model.id}_#{g}", :value => "readwrite"}
+          %label{:for => "write#{model.id}_#{g}"} read/delete
+          %input{ :type => 'submit', :value => "add", :id=> "policy_add_#{model.id}_#{g}", :class => "policy_button", :name => "form_#{g}"}
