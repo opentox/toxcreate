@@ -188,7 +188,7 @@ jQuery.fn.updatePolicy = function(options) {
            'select': select
          },
          success: function(data) {
-           $("div#model_" + opts.id + "_name").html(data);
+           $("div#model_" + opts.id + "_policy_edit").html(data);
            $("input#model_" + opts.id + "_name").focus();
            $('body').css('cursor','default');
          },
@@ -224,7 +224,7 @@ jQuery.fn.addPolicy = function(options) {
            'selection': selection
          },
          success: function(data) {
-           $("div#model_" + opts.id + "_name").html(data);
+           $("div#model_" + opts.id + "_policy_edit").html(data);
            $("input#model_" + opts.id + "_name").focus();
            $('body').css('cursor','default');
          },
