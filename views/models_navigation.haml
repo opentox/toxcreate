@@ -13,9 +13,11 @@
         %div{:id => idname, :class => "active"}
           %span="#{idname}"
           - if params[:order] == "ASC"
-            #up{:class => "link"}= "&dArr;"
+            #up{:class => "link"}
+              %img{:src => "arrow_down.png", :alt => 'in ascending order', :title => 'in ascending order'}/
           - else
-            #down{:class => "link"}= "&uArr;"
+            #down{:class => "link"}
+              %img{:src => "arrow_up.png", :alt => 'in descending order', :title => 'in descending order'}/
       - else
         %div{:id => idname, :class => "link"}="#{idname}"
     |
