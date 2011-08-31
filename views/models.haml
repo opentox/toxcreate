@@ -17,11 +17,10 @@
 = haml :regression, :layout => false
 = haml :similarity, :layout => false
 = haml :significant_fragments, :layout => false
--# - if is_authorized(model.web_uri, "GET")
 
 - first = 5*@page
 - last = first+4
-= models_navigation
+= models_navigation if @models.size > 1
 - if @models[first..last]
   - @models[first..last].each do |model|
     = haml :model, :locals=>{:model=>model}, :layout => false

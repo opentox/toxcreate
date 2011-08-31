@@ -108,6 +108,7 @@ get '/models/?' do
 
   @models = ToxCreateModel.all.sort(:order => "DESC") unless @models
   @models.each{|m| raise "internal redis error: model is nil" unless m}
+  @models.delete_if{|m| !is_authorized(m.web_uri, "GET")}
   haml :models, :locals=>{:models=>@models}
 end
 
