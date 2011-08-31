@@ -91,5 +91,10 @@ helpers do
     haml :neighbors_navigation, :layout => false
   end
 
+  def models_navigation
+    @page = 0 unless @page
+    haml :models_navigation, :layout => false
+  end
+
 end
 
