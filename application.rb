@@ -90,7 +90,7 @@ get '/login' do
   haml :login
 end
 
-get '/models/?' do
+get '/models/?' do 
   @page = params[:page] ? params[:page].to_i : 0
   order = params["order"] == "ASC" ? "ASC" : "DESC"
   params["order"] = order
