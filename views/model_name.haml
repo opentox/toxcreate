@@ -5,12 +5,11 @@
     #{js}
   });
 %h2
-  = model.name
-  - if is_authorized(model.web_uri, "PUT") 
-    %span{:class => "edit_button"}      
-      [
-      %a{:href => url_for("/model/#{model.id}/name?mode=edit"), :id => "edit_#{model.id}"} edit name
-      |
-      %a{:href => url_for("/model/#{model.id}/name?mode=manage"), :id => "edit_#{model.id}_policy"} protect data
-      ]
+  = model.name 
+  %span{:class => "edit_button"}      
+    [
+    %a{:href => url_for("/model/#{model.id}/name?mode=edit"), :id => "edit_#{model.id}"} edit name
+    |
+    %a{:href => url_for("/model/#{model.id}/name?mode=manage"), :id => "edit_#{model.id}_policy"} protect data
+    ]
 %div{:id => "model_#{model.id}_policy_edit"}      
