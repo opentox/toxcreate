@@ -8,6 +8,14 @@ helpers do
     end
     return false
   end
+  
+  def is_group_authorized(user)
+    if OpenTox::Authorization.list_uri_policies(uri, session[:subjectid]).each{|pol| pol}.include?OpenTox::Authorization.list_user_groups(user, session[:subjectid]).each{|ug| ug}
+    else
+      return true
+    end
+    return false
+  end
 
   def hide_link(destination)
     @link_id = 0 unless @link_id
