@@ -9,7 +9,7 @@
   - if policies.names.empty? != true
     %tr{:id => "info_update"}
       %td
-        You have shared your model to the following group(s). You can quit the membership by click on "not set" or give group members the option to delete your model.
+        You share your model with the following group(s). Change settings by choose an option and click on update. You can quit the membership by click on "not set" or allow to predict with your model.
         %a{:href=> "/toxcreate/models"} [exit]
     
     %tr
@@ -30,7 +30,7 @@
             %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :id => "read#{model.id}_#{n}", :value => "read", :checked => policies.policies[n].rule.read == true}
             %label{:for => "read#{model.id}_#{n}"} read
             %input{:type => 'radio', :name => "select[#{policies.policies[n].group}]", :id => "write#{model.id}_#{n}", :value => "readwrite", :checked => policies.policies[n].rule.readwrite == true}
-            %label{:for => "write#{model.id}_#{n}"} read/delete
+            %label{:for => "write#{model.id}_#{n}"} read/predict
             %input{ :type => 'submit', :value => "update", :id=> "policy_update_#{model.id}_#{n}", :class => "policy_button"}
 
 
@@ -39,7 +39,7 @@
           
   %tr{:id=>"info_add"}
     %td
-      Add your model to one or more registered groups if you like to share your model "read" gives access, "read/delete" allows group members to delete and rename your model.
+      Add your model to one or more registered groups to share your model. "read" gives access to data, "read/predict" allows group members to make predictions with your model.
       %a{:href=> "/toxcreate/models"} [exit]
   %tr
   - groups.each do |g|
@@ -59,5 +59,5 @@
           %input{:type => 'radio', :name => "selection[#{g}]", :id => "read#{model.id}_#{g}", :value => "read"}
           %label{:for => "read#{model.id}_#{g}"} read
           %input{:type => 'radio', :name => "selection[#{g}]", :id => "write#{model.id}_#{g}", :value => "readwrite"}
-          %label{:for => "write#{model.id}_#{g}"} read/delete
+          %label{:for => "write#{model.id}_#{g}"} read/predict
           %input{ :type => 'submit', :value => "add", :id=> "policy_add_#{model.id}_#{g}", :class => "policy_button", :name => "form_#{g}"}
