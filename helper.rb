@@ -96,5 +96,24 @@ helpers do
     haml :models_navigation, :layout => false
   end
 
+  def endpoint_option_list(max_time=3600)
+    out = ""
+    tmpfile = File.join(TMP_DIR, "endpoint_option_list")
+    if File.exists? tmpfile
+      if Time.now-File.mtime(tmpfile) <= max_time
+        f = File.open(tmpfile, 'r+')
+        f.each{|line| out << line}
+        return out
+      else
+        File.unlink(tmpfile)
+      end
+    end
+    result = OpenTox::Ontology::Echa.endpoint_option_list()
+    if result.lines.count > 3
+      f = File.new(tmpfile,"w")
+      f.print result
+      f.close
+    end
+    return result
+  end
 end
-
