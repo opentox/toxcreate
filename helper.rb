@@ -8,13 +8,10 @@ helpers do
     end
     return false
   end
-  
-  def is_group_authorized(user)
-    if OpenTox::Authorization.list_uri_policies(uri, session[:subjectid]).each{|pol| pol}.include?OpenTox::Authorization.list_user_groups(user, session[:subjectid]).each{|ug| ug}
-    else
-      return true
-    end
-    return false
+
+  def uri_owner?(uri)
+    owner = OpenTox::Authorization.get_uri_owner(uri, session[:subjectid])
+    return session[:username] == owner
   end
 
   def hide_link(destination)
