@@ -5,11 +5,14 @@
     #{js}
   });
 %h2
-  = model.name 
+  = model.name  
   %span{:class => "edit_button"}      
-    [
-    %a{:href => url_for("/model/#{model.id}/name?mode=edit"), :id => "edit_#{model.id}"} edit name
-    |
-    %a{:href => url_for("/model/#{model.id}/name?mode=manage"), :id => "edit_#{model.id}_policy"} protect data
-    ]
-%div{:id => "model_#{model.id}_policy_edit"}      
+    - unless !is_authorized(model.web_uri, "POST") && !uri_owner?(model.web_uri)
+      [
+      - if is_authorized(model.web_uri, "POST")
+        %a{:href => url_for("/model/#{model.id}/name?mode=edit"), :id => "edit_#{model.id}"} edit name
+      - if uri_owner?(model.web_uri)
+        |
+        %a{:href => url_for("/model/#{model.id}/name?mode=manage"), :id => "edit_#{model.id}_policy"} protect data
+      ]
+%div{:id => "model_#{model.id}_policy_edit"}
