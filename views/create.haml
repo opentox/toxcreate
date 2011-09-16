@@ -24,6 +24,8 @@
         = link_to "SDF", '/help'
         format:
       %input{:type => 'file', :name => 'file', :id => 'file', :size => '41'}
+      %br
+      -# = haml :model_echa, :layout => false
     %input{ :type => "submit", :value => "Create model"}
     =# link_to "Cancel", '/create'
 
