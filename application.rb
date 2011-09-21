@@ -185,8 +185,8 @@ get '/model/:id/name/?' do
           new_p.policies[policyname].rule.uri = uri
                 
           case params[:selection]
-            when "read"
-              new_p.policies[policyname].rule.read = true
+            #when "read"
+              #new_p.policies[policyname].rule.read = true
             when "readwrite"
               new_p.policies[policyname].rule.readwrite = true
             else
@@ -216,8 +216,8 @@ get '/model/:id/name/?' do
           new_p.policies[policyname].rule.uri = uri
               
           case params[:select]
-            when "read"
-              new_p.policies[policyname].rule.read = true
+            #when "read"
+              #new_p.policies[policyname].rule.read = true
             when "readwrite"
               new_p.policies[policyname].rule.readwrite = true
             when "not set"
