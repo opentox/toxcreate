@@ -102,7 +102,7 @@ get '/models/?' do
       @models = ToxCreateModel.all.sort(:order => "#{order}")
     end
   else
-    params["sort_by"] = "id"
+    params["sort_by"] = "created_at"
   end
 
   @models = ToxCreateModel.all.sort(:order => "DESC") unless @models
