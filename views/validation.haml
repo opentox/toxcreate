@@ -7,7 +7,7 @@
         - if model.validation_report_uri
           %dt Detailed report:
           %dd
-            %a{:href => model.validation_report_uri + subjectstring, :target => "_blank"} show
+            %a{:href => model.validation_report_uri, :target => "_blank"} show
         %dt Number of predictions:
         %dd= model.nr_predictions.to_s
         - case model.type

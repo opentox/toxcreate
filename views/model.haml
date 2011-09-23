@@ -29,9 +29,9 @@
         - if is_authorized(model.web_uri, "DELETE")
           %a{:href => url_for("/model/#{model.id}"), :id => "delete_#{model.id}", :class => 'delete_link'} 
             - if model.status =~ /Completed|Error|Cancelled/ 
-              (delete)
+              &nbsp;(delete)
             - else
-              (stop)
+              &nbsp;(stop)
         %span
           %br
         
@@ -65,26 +65,26 @@
         %dt Training dataset:
         %dd
           - if model.training_dataset.match(/ambit/i)
-            %a{:href => "#{model.training_dataset}#{subjectstring}", :rel => "external"} Ambit database
+            %a{:href => "#{model.training_dataset}", :rel => "external"} Ambit database
           - else
-            %a{:href => "#{model.training_dataset}.xls#{subjectstring}"} Excel sheet
+            %a{:href => "#{model.training_dataset}.xls"} Excel sheet
             ,
             -#%a{:href => "#{model.training_dataset}.rdf"} RDF/XML
             -#%em (experts) ,
-            %a{:href => "#{model.training_dataset}.sdf#{subjectstring}" } SDF
+            %a{:href => "#{model.training_dataset}.sdf" } SDF
             ,
-            %a{:href => "#{model.training_dataset}.yaml#{subjectstring}" } YAML
+            %a{:href => "#{model.training_dataset}.yaml" } YAML
             %em  (experts)
       - if model.feature_dataset
         %dt Feature dataset:
         %dd
           -#%a{:href => "#{model.feature_dataset}.rdf"} RDF/XML
           -#,
-          %a{:href => "#{model.feature_dataset}.xls#{subjectstring}"} Excel sheet
+          %a{:href => "#{model.feature_dataset}.xls"} Excel sheet
           ,
-          %a{:href => "#{model.feature_dataset}.sdf#{subjectstring}"} SDF
+          %a{:href => "#{model.feature_dataset}.sdf"} SDF
           ,
-          %a{:href => "#{model.feature_dataset}.yaml#{subjectstring}"} YAML
+          %a{:href => "#{model.feature_dataset}.yaml"} YAML
           %em  (experts)
       - if model.uri
         %dt Model:
@@ -94,7 +94,7 @@
           -#,
           - if model.validation_qmrf_uri
             %a{:href => File.join(model.validation_qmrf_uri,"editor")} QMRF Editor, 
-          %a{:href => "#{model.uri}.yaml#{subjectstring}"} YAML
+          %a{:href => "#{model.uri}.yaml"} YAML
           %em  (experts, models cannot be represented in Excel)
 
-    = haml :validation, :locals=>{:model=>model,:subjectstring => subjectstring}, :layout => false     
+    = haml :validation, :locals=>{:model=>model}, :layout => false

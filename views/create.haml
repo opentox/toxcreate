@@ -24,6 +24,8 @@
         = link_to "SDF", '/help'
         format:
       %input{:type => 'file', :name => 'file', :id => 'file', :size => '41'}
+      %br
+      -# = haml :model_echa, :layout => false
     %input{ :type => "submit", :value => "Create model"}
     =# link_to "Cancel", '/create'
 
@@ -47,15 +49,16 @@
     structure-activity models from your experimental data. The models can be used to predict toxicity of new chemicals (e.g. for 
     %a{:href => "http://ec.europa.eu/environment/chemicals/reach/reach_intro.htm", :rel => "external"} REACH
     purposes) and to reduce the need for animal testing.  The following methods are currently available:
-    %ul
-      %li
-        = toggle_link("#lazar_description","lazar")
-        %em= toggle_link("#classification","classification")
-        models and
-      %li
-        = toggle_link("#lazar_description","lazar")
-        %em= toggle_link("#regression","regression")
-        models (experimental) 
+  %ul
+    %li
+      = toggle_link("#lazar_description","lazar")
+      %em= toggle_link("#classification","classification")
+      models and
+    %li
+      = toggle_link("#lazar_description","lazar")
+      %em= toggle_link("#regression","regression")
+      models (experimental)
+  %p
     Further modelling algorithms may be added in future versions.
 
   .login_notice
