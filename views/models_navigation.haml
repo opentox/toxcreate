@@ -42,7 +42,7 @@
         %img{:src => "arrow_right_inactive.png", :alt => '', :title => ''}/
 
     - js = ""
-    - ["id","created_at","name","type"].each do |s|
+    - ["created_at","name","type"].each do |s|
       - idname = s == "created_at" ? "date" : s
       - js += "$('##{idname}').click(function() \{ \n "
       - js += "  $('#sort_by').val('#{s}');\n "
