@@ -232,8 +232,8 @@ end
 
 post '/models' do # create a new model
 
-  unless (params[:dataset] and params[:prediction_feature]) or (params[:file] and params[:file][:tempfile]) #params[:endpoint] and 
-    flash[:notice] = "Please upload a Excel or CSV file or select an AMBIT dataset."
+  unless (params[:dataset] and params[:prediction_feature]) or (params[:endpoint] and params[:file] and params[:file][:tempfile]) #params[:endpoint] and 
+    flash[:notice] = "Please upload a Excel or CSV file and select an endpoint or select an AMBIT dataset."
     redirect url_for('/create')
   end
 
