@@ -1,7 +1,7 @@
 ['rubygems', "haml", "sass", "rack-flash"].each do |lib|
   require lib
 end
-gem "opentox-ruby", "~> 2"
+gem "opentox-ruby", "~> 3"
 require 'opentox-ruby'
 gem 'sinatra-static-assets'
 require 'sinatra/static_assets'
@@ -103,7 +103,7 @@ get '/models/?' do
       @models = ToxCreateModel.all.sort(:order => "#{order}")
     end
   else
-    params["sort_by"] = "id"
+    params["sort_by"] = "created_at"
   end
 
   @models = ToxCreateModel.all.sort(:order => "DESC") unless @models
