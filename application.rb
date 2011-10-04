@@ -194,6 +194,7 @@ end
 =begin
 =end
 get '/create' do
+  redirect url_for('/predict') unless is_aluist
   haml :create
 end
 get '/help' do
