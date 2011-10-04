@@ -90,10 +90,25 @@ get '/login' do
 end
 
 get '/models/?' do
-  @models = ToxCreateModel.all.sort(:order => "DESC")
+  @page = params[:page] ? params[:page].to_i : 0
+  order = params["order"] == "ASC" ? "ASC" : "DESC"
+  params["order"] = order
+  sort_by = params["sort_by"]
+  if sort_by
+    case sort_by
+    when "name", "created_at", "type"
+      @models = ToxCreateModel.all.sort_by(sort_by.to_sym, :order => "#{order} ALPHA")
+    when "id"
+      @models = ToxCreateModel.all.sort(:order => "#{order}")
+    end
+  else
+    params["sort_by"] = "created_at"
+  end
+
+  @models = ToxCreateModel.all.sort(:order => "DESC") unless @models
   @models.each{|m| raise "internal redis error: model is nil" unless m}
-  subjectstring = @subjectid ? "?subjectid=#{CGI.escape(@subjectid)}" : ""
-  haml :models, :locals=>{:models=>@models, :subjectstring => subjectstring}
+  @models.delete_if{|m| !is_authorized(m.web_uri, "GET")}
+  haml :models, :locals=>{:models=>@models}
 end
 
 get '/model/:id/status/?' do
@@ -156,13 +171,12 @@ end
 get '/model/:id/:view/?' do
   response['Content-Type'] = 'text/plain'
   model = ToxCreateModel.get(params[:id])
-  subjectstring = @subjectid ? "?subjectid=#{CGI.escape(@subjectid)}" : ""
   begin
     case params[:view]
       when "model"
-        haml :model, :locals=>{:model=>model,:subjectstring => subjectstring}, :layout => false
+        haml :model, :locals=>{:model=>model}, :layout => false
       when /validation/
-        haml :validation, :locals=>{:model=>model,:subjectstring => subjectstring}, :layout => false
+        haml :validation, :locals=>{:model=>model}, :layout => false
       else
         return "unable to render model: id #{params[:id]}, view #{params[:view]}"
     end
@@ -173,6 +187,7 @@ end
 
 get '/predict/?' do 
   @models = ToxCreateModel.all.sort(:order => "DESC")
+  @models.delete_if{|m| !is_authorized(m.web_uri, "GET")}
   @models = @models.collect{|m| m if m.status == 'Completed'}.compact
   haml :predict
 end
@@ -217,7 +232,10 @@ post '/feature' do
 end
 
 post '/models' do # create a new model
-
+  unless is_aluist
+    flash[:notice] = "You do not have the permission to create a new model."
+    redirect url_for('/models')
+  end
   unless (params[:dataset] and params[:prediction_feature]) or (params[:file] and params[:file][:tempfile]) #params[:endpoint] and 
     flash[:notice] = "Please upload a Excel or CSV file or select an AMBIT dataset."
     redirect url_for('/create')
