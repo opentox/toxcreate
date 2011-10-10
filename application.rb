@@ -1,7 +1,7 @@
 ['rubygems', "haml", "sass", "rack-flash"].each do |lib|
   require lib
 end
-gem "opentox-ruby", "~> 2"
+gem "opentox-ruby", "~> 3"
 require 'opentox-ruby'
 gem 'sinatra-static-assets'
 require 'sinatra/static_assets'
@@ -280,6 +280,7 @@ post '/models' do # create a new model
         else
           raise "#{params[:file][:filename]} has an unsupported file type."
         end
+        @dataset.features[@dataset.features.keys.first][OWL.sameAs] = params[:endpoint].split(',').first if params[:endpoint]
         @dataset.save(@subjectid)
       rescue => e
         error "Dataset creation failed '#{e.message}'",e
@@ -290,7 +291,6 @@ post '/models' do # create a new model
         @prediction_feature = OpenTox::Feature.find(@dataset.features.keys.first,@subjectid)
       end
     end
-
     task.progress(10)
     if @dataset.compounds.size < 10
       error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/help"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."

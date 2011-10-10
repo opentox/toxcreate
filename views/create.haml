@@ -15,11 +15,11 @@
    $("#endpoint_list_button").click(function() {
      if ($("div#div_endpoint").is(":hidden")) {
        $("div#div_endpoint").slideDown("slow");
-       $("input#endpoint_list_button").val("OK");
+       $("input#endpoint_list_button").val("Hide");
        $("input#endpoint_list_button").toggleClass("ok_button", true);
      } else {
        $("div#div_endpoint").slideUp("slow");
-       $("input#endpoint_list_button").val("select endpoint");
+       $("input#endpoint_list_button").val("Select endpoint");
        $("input#endpoint_list_button").toggleClass("ok_button", false);
      }
    });

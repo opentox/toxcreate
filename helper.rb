@@ -134,7 +134,7 @@ helpers do
   end
 
   def endpoint_selection()
-    out = "<span id='endpoint_label'></span><input type='button' id='endpoint_list_button' value='select endpoint' /> \n
+    out = "<span id='endpoint_label'></span><input type='button' id='endpoint_list_button' value='Select endpoint' /> \n
     <div id='div_endpoint'>\n"
     out += "<b>Please select:</b>\n"
     out += endpoint_level
