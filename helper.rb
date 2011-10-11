@@ -98,7 +98,7 @@ helpers do
 
   def endpoint_option_list(max_time=3600)
     out = ""
-    tmpfile = File.join(TMP_DIR, "endpoint_option_list")
+    tmpfile = File.join(TMP_DIR, 'endpoint_option_list')
     if File.exists? tmpfile
       if Time.now-File.mtime(tmpfile) <= max_time
         f = File.open(tmpfile, 'r+')
@@ -110,7 +110,7 @@ helpers do
     end
     result = endpoint_selection()
     if result.lines.count > 3
-      f = File.new(tmpfile,"w")
+      f = File.new(tmpfile,'w')
       f.print result
       f.close
     end

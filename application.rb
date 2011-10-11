@@ -281,6 +281,7 @@ post '/models' do # create a new model
           raise "#{params[:file][:filename]} has an unsupported file type."
         end
         @dataset.features[@dataset.features.keys.first][OWL.sameAs] = params[:endpoint].split(',').first if params[:endpoint]
+        @model.update :endpoint_uri => params[:endpoint].split(',').first, :endpoint => params[:endpoint].split(',')[1..99].to_s.gsub(/^"(.*?)"$/,'\1') if params[:endpoint]
         @dataset.save(@subjectid)
       rescue => e
         error "Dataset creation failed '#{e.message}'",e
@@ -290,6 +291,11 @@ post '/models' do # create a new model
       else
         @prediction_feature = OpenTox::Feature.find(@dataset.features.keys.first,@subjectid)
       end
+    #else
+      # test when external dataset is enabled: 
+      #if @dataset.features[@dataset.features.keys.first][OWL.sameAs] 
+      #  @model.update :endpoint_uri => @dataset.features[@dataset.features.keys.first][OWL.sameAs], :endpoint => OpenTox::Ontology::Echa.get_endpoint_name(@dataset.features[@dataset.features.keys.first][OWL.sameAs]) 
+      #end
     end
     task.progress(10)
     if @dataset.compounds.size < 10
