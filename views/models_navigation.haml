@@ -5,8 +5,8 @@
     %input{:type => :hidden, :name => :order, :id => "order", :value => params[:order]}
     %input{:type => :hidden, :name => :page, :id => "page", :value => params[:page]}
 
-    Models are sorted by:
-    - ["id","created_at","name","type"].each do |s|
+    Sort by:
+    - ["created_at","name","type"].each do |s|
       - idname = s == "created_at" ? "date" : s
       - if params[:sort_by] == s
         %div{:id => idname, :class => "active"}
@@ -42,7 +42,7 @@
         %img{:src => "arrow_right_inactive.png", :alt => '', :title => ''}/
 
     - js = ""
-    - ["id","created_at","name","type"].each do |s|
+    - ["created_at","name","type"].each do |s|
       - idname = s == "created_at" ? "date" : s
       - js += "$('##{idname}').click(function() \{ \n "
       - js += "  $('#sort_by').val('#{s}');\n "
