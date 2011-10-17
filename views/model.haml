@@ -41,6 +41,9 @@
       - if model.nr_compounds
         %dt Training compounds:
         %dd= model.nr_compounds 
+      - if model.endpoint
+        %dt Endpoint:
+        %dd= model.endpoint
       - if model.error_messages
         %dt Errors:
         %dd= model.error_messages

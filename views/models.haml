@@ -26,3 +26,4 @@
     = haml :model, :locals=>{:model=>model}, :layout => false
 -if @models.size == 0
   .notice There are currently no models. You have to create a model first.
+= models_navigation_bottom if @models.size > 1

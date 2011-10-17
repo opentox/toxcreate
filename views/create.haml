@@ -1,3 +1,30 @@
+:javascript
+  $(document).ready(function() {
+   $(".endpoint_list").click(function() {
+     elem  = this.id;
+     title = $("label#label_" + elem).html();
+     if($("ul#list_" + elem)) {
+       if ($("ul#list_" + elem).is(":hidden")) {
+         $("ul#list_" + elem).slideDown("slow");
+       } else {
+         $("ul#list_" + elem).slideUp("slow");
+       }
+     }
+     $("span#endpoint_label").html(title);
+   });
+   $("#endpoint_list_button").click(function() {
+     if ($("div#div_endpoint").is(":hidden")) {
+       $("div#div_endpoint").slideDown("slow");
+       $("input#endpoint_list_button").val("Hide");
+       $("input#endpoint_list_button").toggleClass("ok_button", true);
+     } else {
+       $("div#div_endpoint").slideUp("slow");
+       $("input#endpoint_list_button").val("Select endpoint");
+       $("input#endpoint_list_button").toggleClass("ok_button", false);
+     }
+   });
+  });
+
 .input
 
   %p
@@ -25,7 +52,8 @@
         format:
       %input{:type => 'file', :name => 'file', :id => 'file', :size => '41'}
       %br
-      -# = haml :model_echa, :layout => false
+      = haml :model_echa, :layout => false
+    %br
     %input{ :type => "submit", :value => "Create model"}
     =# link_to "Cancel", '/create'
 

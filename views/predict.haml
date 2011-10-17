@@ -41,7 +41,12 @@
           2. Select one or more toxic endpoints
           
         %br
+        - endpoint = ''
         - @models.each do |model|
+          -if model.endpoint != endpoint
+            -endpoint = model.endpoint
+            %b #{endpoint}:
+            %br
           %input{:type => 'checkbox', :name => "selection[#{model.id}]", :value => true, :id => "model#{model.id}", :disabled => false}
           %label{:for => "model#{model.id}"}
             = model.name

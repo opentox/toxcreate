@@ -96,8 +96,22 @@ get '/models/?' do
   sort_by = params["sort_by"]
   if sort_by
     case sort_by
-    when "name", "created_at", "type"
-      @models = ToxCreateModel.all.sort_by(sort_by.to_sym, :order => "#{order} ALPHA")
+    when "created_at"
+      @models = ToxCreateModel.all.sort(:order => "#{order}")
+    when "name"
+      @models = ToxCreateModel.all.sort
+      if order == "ASC"
+        @models = @models.sort_by{|x| x.name.downcase}
+      else
+        @models = @models.sort{|x, y| y.name.downcase <=> x.name.downcase}
+      end
+    when "type", "endpoint"
+      @models = ToxCreateModel.all.sort
+      if order == "ASC"
+        @models = @models.sort_by{|x| [x.send(sort_by.to_sym),x.name.downcase]}
+      else
+        @models = @models.sort{|x,y|[y.send(sort_by.to_sym),x.name.downcase] <=> [x.send(sort_by.to_sym), y.name.downcase]}
+      end
     when "id"
       @models = ToxCreateModel.all.sort(:order => "#{order}")
     end
@@ -186,9 +200,10 @@ get '/model/:id/:view/?' do
 end
 
 get '/predict/?' do 
-  @models = ToxCreateModel.all.sort(:order => "DESC")
+  @models = ToxCreateModel.all.sort
   @models.delete_if{|m| !is_authorized(m.web_uri, "GET")}
   @models = @models.collect{|m| m if m.status == 'Completed'}.compact
+  @models = @models.sort_by{|x| [x.endpoint ? x.endpoint : "Without Endpoint",x.name.downcase]}
   haml :predict
 end
 =begin
@@ -237,8 +252,8 @@ post '/models' do # create a new model
     flash[:notice] = "You do not have the permission to create a new model."
     redirect url_for('/models')
   end
-  unless (params[:dataset] and params[:prediction_feature]) or (params[:file] and params[:file][:tempfile]) #params[:endpoint] and 
-    flash[:notice] = "Please upload a Excel or CSV file or select an AMBIT dataset."
+  unless (params[:dataset] and params[:prediction_feature]) or (params[:endpoint] and params[:file] and params[:file][:tempfile]) #params[:endpoint] and 
+    flash[:notice] = "Please upload a Excel or CSV file and select an endpoint or select an AMBIT dataset."
     redirect url_for('/create')
   end
 
@@ -285,6 +300,8 @@ post '/models' do # create a new model
         else
           raise "#{params[:file][:filename]} has an unsupported file type."
         end
+        @dataset.features[@dataset.features.keys.first][OWL.sameAs] = params[:endpoint].split(',').first if params[:endpoint]
+        @model.update :endpoint_uri => params[:endpoint].split(',').first, :endpoint => params[:endpoint].split(',')[1..99].to_s.gsub(/^"(.*?)"$/,'\1') if params[:endpoint]
         @dataset.save(@subjectid)
       rescue => e
         error "Dataset creation failed '#{e.message}'",e
@@ -294,8 +311,12 @@ post '/models' do # create a new model
       else
         @prediction_feature = OpenTox::Feature.find(@dataset.features.keys.first,@subjectid)
       end
+    #else
+      # test when external dataset is enabled: 
+      #if @dataset.features[@dataset.features.keys.first][OWL.sameAs] 
+      #  @model.update :endpoint_uri => @dataset.features[@dataset.features.keys.first][OWL.sameAs], :endpoint => OpenTox::Ontology::Echa.get_endpoint_name(@dataset.features[@dataset.features.keys.first][OWL.sameAs]) 
+      #end
     end
-
     task.progress(10)
     if @dataset.compounds.size < 10
       error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/help"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."
