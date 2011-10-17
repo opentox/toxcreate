@@ -96,6 +96,11 @@ helpers do
     haml :models_navigation, :layout => false
   end
 
+  def models_navigation_bottom
+    @page = 0 unless @page
+    haml :models_navigation_bottom, :layout => false
+  end
+
   def endpoint_option_list(max_time=3600)
     out = ""
     tmpfile = File.join(TMP_DIR, 'endpoint_option_list')

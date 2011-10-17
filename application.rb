@@ -96,8 +96,22 @@ get '/models/?' do
   sort_by = params["sort_by"]
   if sort_by
     case sort_by
-    when "name", "created_at", "type"
-      @models = ToxCreateModel.all.sort_by(sort_by.to_sym, :order => "#{order} ALPHA")
+    when "created_at"
+      @models = ToxCreateModel.all.sort(:order => "#{order}")
+    when "name"
+      @models = ToxCreateModel.all.sort
+      if order == "ASC"
+        @models = @models.sort_by{|x| x.name.downcase}
+      else
+        @models = @models.sort{|x, y| y.name.downcase <=> x.name.downcase}
+      end
+    when "type", "endpoint"
+      @models = ToxCreateModel.all.sort
+      if order == "ASC"
+        @models = @models.sort_by{|x| [x.send(sort_by.to_sym),x.name.downcase]}
+      else
+        @models = @models.sort{|x,y|[y.send(sort_by.to_sym),x.name.downcase] <=> [x.send(sort_by.to_sym), y.name.downcase]}
+      end
     when "id"
       @models = ToxCreateModel.all.sort(:order => "#{order}")
     end
@@ -186,8 +200,9 @@ get '/model/:id/:view/?' do
 end
 
 get '/predict/?' do 
-  @models = ToxCreateModel.all.sort(:order => "DESC")
+  @models = ToxCreateModel.all.sort
   @models = @models.collect{|m| m if m.status == 'Completed'}.compact
+  @models = @models.sort_by{|x| [x.endpoint,x.name.downcase] }
   haml :predict
 end
 

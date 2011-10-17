@@ -270,14 +270,7 @@ dl
   float: left
 
 .models_navigation
-  #prev
-    @extend a
-    display: inline
-    cursor: pointer
-  #next
-    @extend a
-    display: inline
-    cursor: pointer
+  margin-top: 4px
   .link
     @extend a
     display: inline
@@ -288,6 +281,21 @@ dl
     font-weight: bold
   .thin
     font-weight: 100
+  .page
+    border: solid 1px #999
+    background-color: #FFF
+    padding: 0px 3px
+    font-size: 94%
+    foont-weight: normal
+  .page_link:hover
+    border-color: #000
+    color: #000
+  .page_active
+    background-color: #ccd2dc
+    color: #000
+    font-weight: bold
+    border-right-color: #000
+    border-bottom-color: #000
 
 ul.endpoint
   list-style-type: none
