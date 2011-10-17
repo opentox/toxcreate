@@ -202,7 +202,7 @@ end
 get '/predict/?' do 
   @models = ToxCreateModel.all.sort
   @models = @models.collect{|m| m if m.status == 'Completed'}.compact
-  @models = @models.sort_by{|x| [x.endpoint,x.name.downcase] }
+  @models = @models.sort_by{|x| [x.endpoint ? x.endpoint : "",x.name.downcase]}
   haml :predict
 end
 
