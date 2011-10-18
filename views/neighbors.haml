@@ -14,7 +14,7 @@
   - compound = OpenTox::Compound.new(neighbor[OT.compound])
   %tr
     %td.image= compound_image(compound,@prediction.descriptors(compound),@value_map)
-    %td= activity_markup(neighbor[OT.measuredActivity], @value_map)
+    %td= activity_markup(neighbor[OT.measuredActivity].to_s, @value_map)
     %td= sprintf('%.03g', neighbor[OT.similarity])
     %td
       %ul
