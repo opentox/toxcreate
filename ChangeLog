@@ -1,0 +1,6 @@
+v3.0.1 2011-10-19
+    * assign a model to an endpoints on creating a new model,
+      endpoint-list from ontology service,
+      endpoint uri in "Training dataset" 
+    * fix missing "measured activity" predicting a classification model
+
