@@ -96,9 +96,14 @@ helpers do
     haml :models_navigation, :layout => false
   end
 
+  def models_navigation_bottom
+    @page = 0 unless @page
+    haml :models_navigation_bottom, :layout => false
+  end
+
   def endpoint_option_list(max_time=3600)
     out = ""
-    tmpfile = File.join(TMP_DIR, "endpoint_option_list")
+    tmpfile = File.join(TMP_DIR, 'endpoint_option_list')
     if File.exists? tmpfile
       if Time.now-File.mtime(tmpfile) <= max_time
         f = File.open(tmpfile, 'r+')
@@ -108,12 +113,39 @@ helpers do
         File.unlink(tmpfile)
       end
     end
-    result = OpenTox::Ontology::Echa.endpoint_option_list()
+    result = endpoint_selection()
     if result.lines.count > 3
-      f = File.new(tmpfile,"w")
+      f = File.new(tmpfile,'w')
       f.print result
       f.close
     end
-    return result
+    result
   end
+
+  def endpoint_level(endpoint="Endpoints", level=1)
+    results = OpenTox::Ontology::Echa.echa_endpoints(endpoint) rescue results = []
+    out = ""
+    out += "<ul id='list_#{endpoint}' class='endpoint level_#{level}'>\n" if results.size > 0
+    results.each do |result|
+      r = result.split(',')
+      endpointname = CGI.escape(r.first.split("#").last).gsub(".","")
+      title = r[1..r.size-1].to_s
+      out += "  <li class='level_#{level}'><input type='radio' name='endpoint' value='#{result}' id='#{endpointname}' class='endpoint_list' /><label for='#{endpointname}' id='label_#{endpointname}'>#{title.gsub("\"","")}</label>\n"
+      out += endpoint_level(endpointname, level + 1)
+      out += "</li>\n"
+    end
+    out += "</ul>\n" if results.size > 0
+    return out
+  end
+
+  def endpoint_selection()
+    out = "<span id='endpoint_label'></span><input type='button' id='endpoint_list_button' value='Select endpoint' /> \n
+    <div id='div_endpoint'>\n"
+    out += "<b>Please select:</b>\n"
+    out += endpoint_level
+    js = ""
+    out += "</div>\n"
+    return out
+  end
+
 end

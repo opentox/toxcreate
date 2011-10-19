@@ -19,6 +19,8 @@ class ToxCreateModel < Ohm::Model
 
 	attribute :training_dataset
 	attribute :feature_dataset
+	attribute :endpoint_uri
+	attribute :endpoint
 	#attributey :validation_task_uri
 	attribute :validation_uri
 

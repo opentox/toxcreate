@@ -1,12 +1,12 @@
 .models_navigation
-
+  - js = ""
   %form{:name => "nav", :action => url_for('/models'), :method => "get", :id => "nav"}
     %input{:type => :hidden, :name => :sort_by, :id => "sort_by", :value => params[:sort_by]}
     %input{:type => :hidden, :name => :order, :id => "order", :value => params[:order]}
     %input{:type => :hidden, :name => :page, :id => "page", :value => params[:page]}
 
     Sort by:
-    - ["created_at","name","type"].each do |s|
+    - ["created_at","name","type","endpoint"].each do |s|
       - idname = s == "created_at" ? "date" : s
       - if params[:sort_by] == s
         %div{:id => idname, :class => "active"}
@@ -22,32 +22,42 @@
     - if @models.size > 5
       |
       Models:
-      = "#{@models.size}"
-      - unless @page.to_i == 0
-        #prev
-          %img{:src => "arrow_left.png", :alt => 'previous', :title => 'previous'}/
-      -else
-        %img{:src => "arrow_left_inactive.png", :alt => '', :title => ''}/
-  
       - if @models.size < 5*@page+5
         - last = @models.size
       - else
         - last = 5*@page+5
-  
-      = "(#{5*@page+1}-#{last}/#{@models.size})"
+ 
+      = "#{5*@page+1}-#{last} / #{@models.size}"
+
+      | Page:
+      - unless @page.to_i == 0
+        #prev{:class => "link"}
+          %img{:src => "arrow_left.png", :alt => 'previous', :title => 'previous'}/
+      -else
+        %img{:src => "arrow_left_inactive.png", :alt => '', :title => ''}/
+
+      - (0..(@models.size/5).to_f.ceil-1).each do |p|
+        -if p != @page.to_f
+          %a{:href => '#', :id => "page_link_#{p}", :class => "page page_link"} #{p+1}
+          - js += "$('#page_link_#{p}').click(function() \{ \n"
+          - js += "  $('#page').val('#{p}');\n"
+          - js += "  $('#nav').submit();\n"
+          - js += "});\n"
+        -else
+          %span{:class => "page page_active"} #{p+1}
+
       - unless 5*@page.to_i+5 >= @models.size
-        #next
+        #next{:class => "link"}
           %img{:src => "arrow_right.png", :alt => 'next', :title => 'next'}/
       -else
         %img{:src => "arrow_right_inactive.png", :alt => '', :title => ''}/
 
-    - js = ""
-    - ["id","created_at","name","type"].each do |s|
+    - ["created_at","name","type","endpoint"].each do |s|
       - idname = s == "created_at" ? "date" : s
-      - js += "$('##{idname}').click(function() \{ \n "
-      - js += "  $('#sort_by').val('#{s}');\n "
-      - js += "  $('#nav').submit();\n "
-      - js += "});\n "
+      - js += "$('##{idname}').click(function() \{ \n"
+      - js += "  $('#sort_by').val('#{s}');\n"
+      - js += "  $('#nav').submit();\n"
+      - js += "});\n"
 
     :javascript
       $("#prev").click(function() {
