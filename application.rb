@@ -85,7 +85,7 @@ get '/?' do
   redirect url_for('/create')
 end
 
-get '/login' do
+get '/login/?' do
   haml :login
 end
 
@@ -206,11 +206,11 @@ get '/predict/?' do
   haml :predict
 end
 
-get '/create' do
+get '/create/?' do
   haml :create
 end
 
-get '/help' do
+get '/help/?' do
   haml :help
 end
 
