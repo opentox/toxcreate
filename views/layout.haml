@@ -4,15 +4,15 @@
   %head
     %meta{'http-equiv' => 'Content-Type', :content => 'text/html; charset=UTF-8'}
     %title ToxCreate
-    %script{:type => "text/javascript", :src  => "javascripts/jquery.js"}
-    %script{:type => "text/javascript", :src  => "javascripts/toxcreate.js"}
-    %script{:type => "text/javascript", :src  => "javascripts/jquery-ui-progressbar.js"}
-    %link{:rel=>'stylesheet', :href=>'stylesheets/style.css', :type => "text/css"}
-    %link{:rel=>'stylesheet', :href=>'progressbar/progressbar.css', :type => "text/css"}      
+    %script{:type => "text/javascript", :src  => "#{url_for('/javascripts/jquery.js')}"}
+    %script{:type => "text/javascript", :src  => "#{url_for('/javascripts/toxcreate.js')}"}
+    %script{:type => "text/javascript", :src  => "#{url_for('/javascripts/jquery-ui-progressbar.js')}"}
+    %link{:rel=>'stylesheet', :href=>"#{url_for('/stylesheets/style.css')}", :type => "text/css"}
+    %link{:rel=>'stylesheet', :href=>"#{url_for('/progressbar/progressbar.css')}", :type => "text/css"}
 
   %body
     .logo
-      %img{:src => "ToxCreate_rgb_72.png", :alt => 'ToxCreate', :align => 'right'}/
+      %img{:src => "#{url_for('/ToxCreate_rgb_72.png')}", :alt => 'ToxCreate', :align => 'right'}/
       %br
       Creates computational models to predict toxicity
     .index
