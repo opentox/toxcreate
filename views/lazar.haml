@@ -27,7 +27,7 @@
               %a{:href => "#prediction", :id => "show_names"} Names and synonyms
               :javascript
                 $("a#show_names").click(function () {
-                  $("#compound_names").load("#{File.join("/compound",@compound.inchi)}");  
+                  $("#compound_names").load("#{File.join("compound",@compound.inchi)}");
                   $("tr#names").toggle();  
                 });
             %li= toggle_link("#fragments","Significant fragments")
