@@ -33,7 +33,14 @@ helpers do
   private 
   def delete_model(model, subjectid=nil)
     task = OpenTox::Task.create("Deleting model: #{model.web_uri}", url_for("/delete",:full)) do |task|
-      begin OpenTox::RestClientWrapper.put(File.join(model.task_uri, "Cancelled"), "Cancelled",{:subjectid => subjectid}) if model.task_uri rescue LOGGER.warn "Cannot cancel task #{model.task_uri}" end
+      begin
+        if model.task_uri
+          task_to_kill = OpenTox::Task.find(model.task_uri)
+          task_to_kill.cancel
+        end
+      rescue
+        LOGGER.warn "Cannot cancel task #{model.task_uri}"
+      end
       task.progress(15)
       delete_dependent(model.uri, subjectid) if model.uri
       task.progress(30)
@@ -53,13 +60,13 @@ helpers do
       task.progress(95)
       model.delete
       unless ToxCreateModel.get(model.id)
-      begin
-        aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
-        LOGGER.debug "Policy deleted for ToxCreateModel URI: #{model.web_uri} with result: #{aa}"
-      rescue
-        LOGGER.warn "Policy delete error for ToxCreateModel URI: #{model.web_uri}"
+        begin
+          aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
+          LOGGER.debug "Policy deleted for ToxCreateModel URI: #{model.web_uri} with result: #{aa}"
+        rescue
+          LOGGER.warn "Policy delete error for ToxCreateModel URI: #{model.web_uri}"
+        end
       end
-    end
       task.progress(100)
       url_for("/models",:full)
     end
@@ -70,7 +77,7 @@ helpers do
       OpenTox::RestClientWrapper.delete(uri, :subjectid => subjectid) if subjectid
       OpenTox::RestClientWrapper.delete(uri) if !subjectid
     rescue
-      LOGGER.warn "Can not delete uri: #{uri}"
+      LOGGER.error "Can not delete uri: #{uri}"
     end
   end
 end
@@ -202,6 +209,7 @@ end
 get '/predict/?' do 
   @models = ToxCreateModel.all.sort
   @models = @models.collect{|m| m if m.status == 'Completed'}.compact
+  @models.delete_if{|m| !is_authorized(m.web_uri, "GET")}
   @models = @models.sort_by{|x| [x.endpoint ? x.endpoint : "",x.name.downcase]}
   haml :predict
 end
