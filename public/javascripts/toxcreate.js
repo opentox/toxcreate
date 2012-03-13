@@ -211,6 +211,7 @@ jQuery.fn.deleteModel = function(type, options) {
          type: opts.method,
          url:  opts.action,
          dataType: 'html',
+         async: true,
          data: {
            '_method': 'delete'
          },
