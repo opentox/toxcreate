@@ -27,6 +27,38 @@
 
 .input
 
+  .notice
+    %h3 DEPRECATION NOTICE
+    During the last months we have added a lot of capabilities and algorithms to our framework and tested them with extensive model building and validation. We finally came to the conclusion that the creation of good models still requires a lot of human intervention and that we cannot recommend a simple 1-click interface as in the current ToxCreate version.
+
+    %br
+      Until we have implemented an expert GUI interface you have the following options to construct models (
+      %a{:href => "http://www.maunz.de"} Andreas Maunz
+      gives detailed instructions in his
+      %a{:href => "http://www.maunz.de/wordpress/topics/opentox"} OpenTox blog
+      ):
+      %ul
+        %li
+          %a{:href => "http://opentox.org/dev/apis/api-1.2"} OpenTox REST interface
+        %li
+          %a{:href => "https://github.com/opentox/opentox-ruby"} opentox-ruby
+          or
+          %a{:href => "https://github.com/opentox/opentox-client"} opentox-client
+          Ruby libraries.
+          %a{:href => "https://github.com/opentox/opentox-client"} opentox-client
+          is under development and will substitute
+          %a{:href => "https://github.com/opentox/opentox-ruby"} opentox-ruby
+        %li
+          %a{:href => "http://ambit.sourceforge.net//download_otclient.html"} IDEAConsult
+          or
+          %a{:href => "https://github.com/alphaville/ToxOtis"} ToxOtis
+          Java libraries
+        %li
+          %a{:href => "http://in-silico.ch"} in silico toxicology 
+          offers model building as a paid service
+      We will keep the ToxCreate interface available for documentation purposes, but
+      %em strongly discourage
+      its use, because the resulting models may perform less than optimal.
   %p
     You will need to upload training data that includes chemical structures and their measured toxicity values, in
     = link_to "Excel", '/help'
