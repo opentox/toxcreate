@@ -26,17 +26,23 @@ helpers do
   end
 
   def sort(descriptors,value_map)
-    features = {:activating => [], :deactivating => []}
-    descriptors.each do |d|
-      if !value_map.empty?
-        features[:activating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} if d[OT.effect] == 2
-        features[:deactivating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} if d[OT.effect] == 1
-      else
-        if d[OT.effect] =~ TRUE_REGEXP 
-          features[:activating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} 
-        elsif d[OT.effect] =~ FALSE_REGEXP 
-          features[:deactivating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} 
+    features = {:activating => [], :deactivating => [], :pc_features => []}
+    if descriptors.kind_of?(Array)
+      descriptors.each do |d|
+        if !value_map.empty?
+          features[:activating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} if d[OT.effect] == 2
+          features[:deactivating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} if d[OT.effect] == 1
+        else
+          if d[OT.effect] =~ TRUE_REGEXP 
+            features[:activating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} 
+          elsif d[OT.effect] =~ FALSE_REGEXP 
+            features[:deactivating] << {:smarts => d[OT.smarts],:p_value => d[OT.pValue]} 
+          end
         end
+      end
+    else
+      descriptors.each do |d,v|
+        features[:pc_features] << {:feature => d, :value => v}
       end
     end
     features

@@ -35,21 +35,21 @@ helpers do
     task = OpenTox::Task.create("Deleting model: #{model.web_uri}", url_for("/delete",:full)) do |task|
       begin OpenTox::RestClientWrapper.put(File.join(model.task_uri, "Cancelled"), "Cancelled",{:subjectid => subjectid}) if model.task_uri rescue LOGGER.warn "Cannot cancel task #{model.task_uri}" end
       task.progress(15)
-      delete_dependent(model.uri, subjectid) if model.uri
+#      delete_dependent(model.uri, subjectid) if model.uri
       task.progress(30)
-      delete_dependent(model.validation_uri, subjectid) if model.validation_uri
+#      delete_dependent(model.validation_uri, subjectid) if model.validation_uri
       task.progress(45)
-      delete_dependent(model.validation_report_uri, subjectid) if model.validation_report_uri
+#      delete_dependent(model.validation_report_uri, subjectid) if model.validation_report_uri
       task.progress(60)
-      delete_dependent(model.validation_qmrf_uri, subjectid) if model.validation_qmrf_uri
+#      delete_dependent(model.validation_qmrf_uri, subjectid) if model.validation_qmrf_uri
       task.progress(75)
-      if model.training_dataset
-        delete_dependent(model.training_dataset, subjectid) if model.training_dataset.match(CONFIG[:services]["opentox-dataset"])
-      end 
+#      if model.training_dataset
+#        delete_dependent(model.training_dataset, subjectid) if model.training_dataset.match(CONFIG[:services]["opentox-dataset"])
+#      end 
       task.progress(90)
-      if model.feature_dataset
-        delete_dependent(model.feature_dataset, subjectid) if model.feature_dataset.match(CONFIG[:services]["opentox-dataset"])
-      end
+#      if model.feature_dataset
+#        delete_dependent(model.feature_dataset, subjectid) if model.feature_dataset.match(CONFIG[:services]["opentox-dataset"])
+#      end
       task.progress(95)
       model.delete
       unless ToxCreateModel.get(model.id)
@@ -247,6 +247,104 @@ post '/feature' do
   haml :feature
 end
 
+post '/models/from_validation' do # create a new model from existing validation
+  if params[:validation_uri] and params[:name] and params[:endpoint]
+    @model = ToxCreateModel.create(:name => params[:name], :subjectid => @subjectid)
+    @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
+    LOGGER.debug "dv --------- #{@model.id}" 
+    task = OpenTox::Task.create("Lazar Toxicity Predictions Task - Collection data from validation and creating lazar model",url_for("/models",:full)) do |task|
+      task.progress(5)
+      if (params[:validation_uri].include? "crossvalidation")
+        begin
+          v = OpenTox::Validation::Crossvalidation.find(params[:validation_uri])
+          v_report = v.find_or_create_report(@subjectid)
+          validation = v.statistics(@subjectid)
+          task.progress(10)
+        rescue => e
+          error "No valide validatin report found.", e
+        end
+        begin
+          @dataset = OpenTox::Dataset.find(v.metadata[OT::dataset])
+          v_algo_params = v.metadata[OT::algorithmParams].split(";")
+          algo_params = {}
+          v_algo_params.each do |param|
+            algo_params[param.split("=").first] = param.split("=").last
+          end
+          LOGGER.debug "dv ---------- #{algo_params.to_yaml}"
+          algo_params["dataset_uri"] = @dataset.uri
+          algo_params["prediction_feature"] = v.metadata[OT::predictionFeature]
+          algo_params["subjectid"] = @subjectid
+          LOGGER.debug "dv ---------- #{algo_params.to_yaml}"
+          lazar = OpenTox::Model::Lazar.create( algo_params, OpenTox::SubTask.new(task,15,25))
+        rescue => e
+          error "Model creation failed",e 
+        end 
+  
+      else
+        begin
+          v = OpenTox::Validation.find(params[:validation_uri])
+          v_report = v.find_or_create_report(@subjectid)
+          validation = OpenTox::Validation.find(params[:validation_uri])
+          lazar = OpenTox::Model::Lazar.find(v.metadata[OT::model])
+          @dataset = OpenTox::Dataset.find(v.metadata[OT::trainingDataset])
+          task.progress(25)
+        rescue => e
+          error "No valide validatin report found.", e
+        end
+        #@model.update :model =>  v.metadata[OT::model]
+      end
+      
+      @model.update :status => "Updating model"
+      @model.update :training_dataset => @dataset.uri, :nr_compounds => @dataset.compounds.size
+      @model.update :endpoint => params[:endpoint] 
+#      @model.update :endpoint_uri => params[:endpoint] 
+      @prediction_feature = OpenTox::Feature.find(v.metadata[OT::predictionFeature])
+
+      @model.update :type => @prediction_feature.feature_type, :feature_dataset => lazar.metadata[OT.featureDataset], :uri => lazar.uri
+      @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings] and @dataset.metadata[OT.Warnings].empty? 
+      @model.update(:validation_uri => v.uri)
+      task.progress(50)
+
+      # create summary
+      
+      @model.update(:nr_predictions => validation.metadata[OT.numInstances].to_i - validation.metadata[OT.numUnpredicted].to_i)
+      if validation.metadata[OT.classificationStatistics]
+        @model.update(:correct_predictions => validation.metadata[OT.classificationStatistics][OT.percentCorrect].to_f)
+        @model.update(:confusion_matrix => validation.confusion_matrix.to_yaml)
+        @model.update(:average_area_under_roc => validation.metadata[OT.classificationStatistics][OT.averageAreaUnderRoc].to_f)
+        validation.metadata[OT.classificationStatistics][OT.classValueStatistics].each do |m|
+          if m[OT.classValue] =~ TRUE_REGEXP
+            #HACK: estimate true feature value correctly 
+            @model.update(:sensitivity => m[OT.truePositiveRate])
+            @model.update(:specificity => m[OT.trueNegativeRate])
+            break
+          end
+        end
+      else
+        @model.update(:r_square => validation.metadata[OT.regressionStatistics][OT.rSquare].to_f)
+        @model.update(:root_mean_squared_error => validation.metadata[OT.regressionStatistics][OT.rootMeanSquaredError].to_f)
+        @model.update(:mean_absolute_error => validation.metadata[OT.regressionStatistics][OT.meanAbsoluteError].to_f)
+      end
+      task.progress(80)
+
+      begin
+        @model.update :status => "Creating validation report"
+        validation_report_uri = v.find_or_create_report(@subjectid, OpenTox::SubTask.new(task,80,90))
+        @model.update :validation_report_uri => validation_report_uri
+      rescue => e
+        error "Model report creation failed",e
+      end
+      
+      task.progress(99)
+      @model.update(:status => "Completed")
+    end
+  else
+    return "No validation and/or name and/or endpoint given." 
+    flash[:notice] = "Creating lazar model from validation failed."
+    redirect url_for('/models')
+  end
+end
+  
 post '/models' do # create a new model
   unless is_aluist
     flash[:notice] = "You do not have the permission to create a new model."

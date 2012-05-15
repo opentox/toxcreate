@@ -33,4 +33,17 @@
         %tr
           %td= f[:smarts]
           %td= f[:p_value]
+  -if features[:deactivating].empty? and features[:activating].empty? and (features[:pc_features].size >= 1)
+    %tr
+      %th
+        descriptor
+      %th
+        value
+    - features[:pc_features].sort{|a,b| a[:feature] <=> b[:feature] }.each do |f|
+      %tr
+        %td= f[:feature]
+        %td= f[:value]
+
+
+
 
