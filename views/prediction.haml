@@ -30,6 +30,8 @@
             %br= p[:error]
           - else
             = activity_markup(p[:prediction], @value_map)
+            - if p[:prediction_transformed]
+              = p[:prediction_transformed]
             - if p[:confidence]
               %br
                 (

@@ -547,12 +547,54 @@ post '/predict/?' do # post chemical name to model
           :error => "Not enough similar compounds in training dataset."
           }
       else
-        @predictions << {
-          :title => model.name,
-          :model_uri => model.uri,
-          :prediction => prediction_dataset.value(@compound),
-          :confidence => prediction_dataset.confidence(@compound)
-          }
+        if model.name.downcase.include? "ptd50"
+          ds = OpenTox::Dataset.new()
+          ds.save(@subjectid)
+          ds.add_compound(@compound.uri)
+          ds.save(@subjectid)
+          mw_algorithm_uri = File.join(CONFIG[:services]["opentox-algorithm"],"pc/MW")
+          mw_uri = OpenTox::RestClientWrapper.post(mw_algorithm_uri, {:dataset_uri=>ds.uri})
+          ds.delete(@subjectid)
+          mw_ds = OpenTox::Dataset.find(mw_uri, @subjectid)
+          mw = mw_ds.data_entries[@compound.uri][mw_uri.to_s + "/feature/MW"].first
+          mw_ds.delete(@subjectid)
+          td50 = (((10**(-1.0*prediction_dataset.value(@compound)))*(mw.to_f*1000))*1000).round / 1000.0
+          prediction_trans = "TD50: #{td50}"
+        elsif model.name.downcase.include? "loael"
+          if model.name.downcase.include? "mol"
+            ds = OpenTox::Dataset.new()
+            ds.save(@subjectid)
+            ds.add_compound(@compound.uri)
+            ds.save(@subjectid)
+            mw_algorithm_uri = File.join(CONFIG[:services]["opentox-algorithm"],"pc/MW")
+            mw_uri = OpenTox::RestClientWrapper.post(mw_algorithm_uri, {:dataset_uri=>ds.uri})
+            ds.delete(@subjectid)
+            mw_ds = OpenTox::Dataset.find(mw_uri, @subjectid)
+            mw = mw_ds.data_entries[@compound.uri][mw_uri.to_s + "/feature/MW"].first
+            mw_ds.delete(@subjectid)
+            mg = (((10**(-1.0*prediction_dataset.value(@compound)))*(mw.to_f*1000))*1000).round / 1000.0
+            prediction_trans = "mg/kg bw/day: #{mg}"
+          elsif model.name.downcase.include? "mg" 
+            mg = ((10**prediction_dataset.value(@compound))*1000).round / 1000.0
+            prediction_trans = "mg/kg bw/day: #{mg}"
+          end
+        end
+        if prediction_trans.nil? 
+          @predictions << {
+            :title => model.name,
+            :model_uri => model.uri,
+            :prediction => prediction_dataset.value(@compound),
+            :confidence => prediction_dataset.confidence(@compound)
+            }
+        else
+          @predictions << {
+            :title => model.name,
+            :model_uri => model.uri,
+            :prediction => prediction_dataset.value(@compound),
+            :confidence => prediction_dataset.confidence(@compound),
+            :prediction_transformed => prediction_trans
+            }
+        end
       end
     end
     # TODO failed/unavailable predictions
