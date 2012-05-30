@@ -35,10 +35,12 @@
           %b= session[:username]
 
       .notice
-        This is an experimental version based on
-        %a{:href => "http://www.opentox.org", :rel => "external"} OpenTox
-        services. Please report problems and feature requests to our 
-        %a{:href => 'http://github.com/opentox/toxcreate/issues', :rel => "external"} issue tracker.
+        This is a prediction interface for Nestle based on IST web services. 
+        Please contact us in case of problems: 
+        %a{:href => 'mailto:andreas@maunz.de', :rel => "andreas@maunz.de"} Andreas Maunz
+        or
+        %a{:href => 'mailto:david.vorg@googlemail.com', :rel => "david.vorg@googlemail.com"} David Vorgrimmler
+        
 
       - if `hostname`.match(/ot-test/)
         .notice 
@@ -55,4 +57,4 @@
     .footer
       &copy; 
       %a{:href => 'http://www.in-silico.ch', :rel => "external"} in silico toxicology gmbh
-      2004-2011
+      2004-2012

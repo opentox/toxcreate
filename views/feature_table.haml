@@ -36,13 +36,13 @@
   -if features[:deactivating].empty? and features[:activating].empty? and (features[:pc_features].size >= 1)
     %tr
       %th
-        descriptor
+        Descriptors
       %th
-        value
+        Values
     - features[:pc_features].sort{|a,b| a[:feature] <=> b[:feature] }.each do |f|
       %tr
         %td= f[:feature]
-        %td= f[:value]
+        %td= f[:value].uniq.collect{|v| v.to_s  + " "}
 
 
 

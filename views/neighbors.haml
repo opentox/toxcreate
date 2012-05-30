@@ -25,7 +25,8 @@
               $("#compound_names#{neighbor_id}").load("#{File.join("compound",compound.inchi)}");  
               $("#names#{neighbor_id}").toggle();  
             });
-        %li= toggle_link("#fragments#{neighbor_id}","Significant fragments")
+        -#%li= toggle_link("#fragments#{neighbor_id}","Significant fragments")
+        %li= toggle_link("#fragments#{neighbor_id}","Physico chemical descriptors")
         -#%li Ambit data
         -# %li
           %a{:href => "http://www.ncbi.nlm.nih.gov/sites/entrez?cmd=PureSearch&db=pccompound&term=#{URI.encode('"'+compound.inchi+'"[InChI]')}"}  PubChem data

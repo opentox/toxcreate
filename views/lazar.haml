@@ -5,7 +5,8 @@
   = haml :lazar_algorithm, :layout => false
   = haml :confidence, :layout => false
   = haml :similarity, :layout => false
-  = haml :significant_fragments, :layout => false
+  -#= haml :significant_fragments, :layout => false
+  = haml :pc_descriptors, :layout => false
   = haml :training_data, :layout => false
 
   %a{:name => "prediction"}
@@ -30,7 +31,8 @@
                   $("#compound_names").load("#{File.join("/compound",@compound.inchi)}");  
                   $("tr#names").toggle();  
                 });
-            %li= toggle_link("#fragments","Significant fragments")
+            -#%li= toggle_link("#fragments","Significant fragments")
+            %li= toggle_link("#fragments","Physico chemical descriptors")
 
       %tr#names{ :style => "display: none;" }
         %td{:colspan => '4'}

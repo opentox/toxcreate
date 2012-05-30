@@ -14,51 +14,12 @@
       %em (neighbors)
       and calculates the prediction from their measured activities.
       %code lazar
-      calculates predictions using
-      %ul
-        %li
-          a majority vote (weighted by compound similarity) for
-          %em classification
-          (
-          %a{:href => "http://www.in-silico.de/articles/modi020905.pdf", :rel => "external"} original publication
-          )
-        %li
-          a local QSAR model based on neighbors for
-          %em regression
-          (
-          %a{:href => "http://www.in-silico.de/articles/mh_tf.pdf", :rel => "external"} original publication
-          )
-
-    %p
-      = toggle_link "#significant_fragments", "Significant fragments"
-      are highlighted in the structure display as follows:
-      - if @value_map.empty?
-        %ul
-          %li
-            .active activating fragments
-          %li
-            .inactive deactivating fragments 
-          %li
-            .inconclusive regions, where activating and deactivating fragments overlap
-          %li
-            .other inert parts
-      - else
-        %ul
-          %li
-            .active= "features that occur predominately in compounds with activity: \"#{@value_map[@value_map.keys.sort.last]}\""
-          %li
-            .inactive= "features that occur predominately in compounds with activity: \"#{@value_map[@value_map.keys.sort.first]}\""
-          %li
-            .inconclusive regions, where fragments from different classes overlap
-          %li
-            .other inert parts
-      - if @value_map.size > 2
-        .notice Incomplete implementation of feature highlighting and display of significant fragments. Only features for 2 classes are shown!
-
-
+      calculates predictions using a well-established radial basis function (rbf) kernel for SVMs
+      %em (regression)
+      
     %p
       Please keep in mind that predictions are based on the measured activities of neighbors. 
-      = toggle_link "#significant_fragments", "Significant fragments"
+      = toggle_link "#pc_descriptors", "Physico chemical descriptors"
       are solely used to determine 
       = toggle_link "#similarity", "activity specific similarities"
       of neighbors.
