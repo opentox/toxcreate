@@ -7,7 +7,7 @@
         = @identifier
     %tr
       %td
-        %img{:src => @compound.to_image_uri, :alt => @compound.to_smiles}
+        %img{:src => @compound.to_image_uri.split("8080").last, :alt => @compound.to_smiles}
       - @predictions.each do |p|
         - LOGGER.debug p.to_yaml
         %td

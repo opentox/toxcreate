@@ -1,1 +1,4 @@
-%img{:src => compound.matching_smarts_image_uri(features[:activating].collect{|f| f[:smarts]},features[:deactivating].collect{|f| f[:smarts]}), :alt => compound.to_smiles}
+%img{:src => compound.to_image_uri.split("8080").last, :alt => compound.to_smiles}
+-# Bad fix for Nestle VA
+-#%img{:src => compound.matching_smarts_image_uri(features[:activating].collect{|f| f[:smarts]},features[:deactivating].collect{|f| f[:smarts]}), :alt => compound.to_smiles}
+
