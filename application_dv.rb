@@ -1,0 +1,724 @@
+['rubygems', "haml", "sass", "rack-flash"].each do |lib|
+  require lib
+end
+gem "opentox-ruby", "~> 3"
+require 'opentox-ruby'
+gem 'sinatra-static-assets'
+require 'sinatra/static_assets'
+require 'ftools'
+require File.join(File.dirname(__FILE__),'model.rb')
+require File.join(File.dirname(__FILE__),'helper.rb')
+
+#moved to wrapper->environment
+#use Rack::Session::Cookie, :expire_after => 28800, 
+#                           :secret => "ui6vaiNi-change_me"
+use Rack::Flash
+
+set :lock, true
+
+helpers do 
+
+  # message will be displayed to the user
+  # error will be raised -> taks will be set to error -> error details available via task-uri
+  def error(message, error=nil)
+    LOGGER.error message
+    @model.update :status => "Error", :error_messages => message
+    if error
+      raise error
+    else
+      raise message
+    end
+  end
+
+  private 
+  def delete_model(model, subjectid=nil)
+    task = OpenTox::Task.create("Deleting model: #{model.web_uri}", url_for("/delete",:full)) do |task|
+      begin OpenTox::RestClientWrapper.put(File.join(model.task_uri, "Cancelled"), "Cancelled",{:subjectid => subjectid}) if model.task_uri rescue LOGGER.warn "Cannot cancel task #{model.task_uri}" end
+      task.progress(15)
+#      delete_dependent(model.uri, subjectid) if model.uri
+      task.progress(30)
+#      delete_dependent(model.validation_uri, subjectid) if model.validation_uri
+      task.progress(45)
+#      delete_dependent(model.validation_report_uri, subjectid) if model.validation_report_uri
+      task.progress(60)
+#      delete_dependent(model.validation_qmrf_uri, subjectid) if model.validation_qmrf_uri
+      task.progress(75)
+#      if model.training_dataset
+#        delete_dependent(model.training_dataset, subjectid) if model.training_dataset.match(CONFIG[:services]["opentox-dataset"])
+#      end 
+      task.progress(90)
+#      if model.feature_dataset
+#        delete_dependent(model.feature_dataset, subjectid) if model.feature_dataset.match(CONFIG[:services]["opentox-dataset"])
+#      end
+      task.progress(95)
+      model.delete
+      unless ToxCreateModel.get(model.id)
+      begin
+        aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
+        LOGGER.debug "Policy deleted for ToxCreateModel URI: #{model.web_uri} with result: #{aa}"
+      rescue
+        LOGGER.warn "Policy delete error for ToxCreateModel URI: #{model.web_uri}"
+      end
+    end
+      task.progress(100)
+      url_for("/models",:full)
+    end
+  end
+
+  def delete_dependent(uri, subjectid=nil)
+    begin
+      OpenTox::RestClientWrapper.delete(uri, :subjectid => subjectid) if subjectid
+      OpenTox::RestClientWrapper.delete(uri) if !subjectid
+    rescue
+      LOGGER.warn "Can not delete uri: #{uri}"
+    end
+  end
+end
+
+before do
+    if !logged_in and !( env['REQUEST_URI'] =~ /\/login$/ and env['REQUEST_METHOD'] == "POST" ) or !AA_SERVER
+      login("guest","guest")
+    end
+end
+
+get '/?' do
+  redirect url_for('/predict')
+end
+
+get '/login' do
+  haml :login
+end
+
+get '/models/?' do
+  @page = params[:page] ? params[:page].to_i : 0
+  order = params["order"] == "ASC" ? "ASC" : "DESC"
+  params["order"] = order
+  sort_by = params["sort_by"]
+  if sort_by
+    case sort_by
+    when "created_at"
+      @models = ToxCreateModel.all.sort(:order => "#{order}")
+    when "name"
+      @models = ToxCreateModel.all.sort
+      if order == "ASC"
+        @models = @models.sort_by{|x| x.name.downcase}
+      else
+        @models = @models.sort{|x, y| y.name.downcase <=> x.name.downcase}
+      end
+    when "type", "endpoint"
+      @models = ToxCreateModel.all.sort
+      if order == "ASC"
+        @models = @models.sort_by{|x| [x.send(sort_by.to_sym),x.name.downcase]}
+      else
+        @models = @models.sort{|x,y|[y.send(sort_by.to_sym),x.name.downcase] <=> [x.send(sort_by.to_sym), y.name.downcase]}
+      end
+    when "id"
+      @models = ToxCreateModel.all.sort(:order => "#{order}")
+    end
+  else
+    params["sort_by"] = "created_at"
+  end
+
+  @models = ToxCreateModel.all.sort(:order => "DESC") unless @models
+  @models.each{|m| raise "internal redis error: model is nil" unless m}
+  @models.delete_if{|m| !is_authorized(m.web_uri, "GET")}
+  haml :models, :locals=>{:models=>@models}
+end
+
+get '/model/:id/status/?' do
+  response['Content-Type'] = 'text/plain'
+  model = ToxCreateModel.get(params[:id])
+  begin
+    haml :model_status, :locals=>{:model=>model}, :layout => false
+  rescue
+    return "Model #{params[:id]} not available"
+  end
+end
+
+get '/model/:id/progress/?' do
+  response['Content-Type'] = 'text/plain'
+  model = ToxCreateModel.get(params[:id])
+  if model.task_uri 
+    if (OpenTox::Task.exist?(model.task_uri))
+      task = OpenTox::Task.exist?(model.task_uri) 
+      percentage_completed = task.percentageCompleted
+    end 
+    begin
+      haml :model_progress, :locals=>{:percentage_completed=>percentage_completed}, :layout => false
+    rescue
+      return "unavailable"
+    end
+  else
+    return ""
+  end
+end
+
+get '/model/:id/name/?' do
+  response['Content-Type'] = 'text/plain'
+  model = ToxCreateModel.get(params[:id])
+  begin
+    case params[:mode]
+      when 'edit'
+        haml :model_name_edit, :locals=>{:model=>model}, :layout => false
+      when 'show'
+        haml :model_name, :locals=>{:model=>model}, :layout => false
+      else
+        params.inspect
+      end
+  rescue
+    return "unavailable"
+  end
+end
+
+put '/model/:id/?' do
+  response['Content-Type'] = 'text/plain'
+  model = ToxCreateModel.get(params[:id])
+  begin
+    model.update :name => params[:name] if params[:name] && model.name != params[:name]
+    redirect url_for("/model/#{model.id}/name?mode=show")
+  rescue
+    return "unavailable"
+  end
+end
+
+
+get '/model/:id/:view/?' do
+  response['Content-Type'] = 'text/plain'
+  model = ToxCreateModel.get(params[:id])
+  begin
+    case params[:view]
+      when "model"
+        haml :model, :locals=>{:model=>model}, :layout => false
+      when /validation/
+        haml :validation, :locals=>{:model=>model}, :layout => false
+      else
+        return "unable to render model: id #{params[:id]}, view #{params[:view]}"
+    end
+  rescue
+    return "unable to render model: id #{params[:id]}, view #{params[:view]}"
+  end
+end
+
+get '/predict/?' do 
+  @models = ToxCreateModel.all.sort
+  @models.delete_if{|m| !is_authorized(m.web_uri, "GET")}
+  @models = @models.collect{|m| m if m.status == 'Completed'}.compact
+  @models = @models.sort_by{|x| [x.endpoint ? x.endpoint : "Without Endpoint",x.name.downcase]}
+  haml :predict
+end
+=begin
+=end
+get '/create' do
+  redirect url_for('/predict') unless is_aluist
+  haml :create
+end
+get '/help' do
+  haml :help
+end
+
+get "/confidence" do
+  haml :confidence
+end
+
+# proxy to get data from compound service
+# (jQuery load does not work with external URIs)
+get %r{/compound/(.*)} do |inchi|
+  inchi = URI.unescape request.env['REQUEST_URI'].sub(/^\//,'').sub(/.*compound\//,'')
+  OpenTox::Compound.from_inchi(inchi).to_names.join(', ')
+end
+
+get '/echa' do
+  @endpoints = OpenTox::Ontology::Echa.endpoints
+  haml :echa
+end
+
+post '/ambit' do
+  session[:echa] = params[:endpoint]
+  @datasets  = OpenTox::Ontology::Echa.datasets(params[:endpoint])
+  haml :ambit
+end
+
+post '/feature' do
+  session[:dataset] = params[:dataset]
+  @features = []
+  OpenTox::Dataset.new(params[:dataset], @subjectid).load_features(@subjectid).each do |uri,metadata|
+    @features << OpenTox::Feature.find(uri, @subjectid) if metadata[OWL.sameAs].match(/#{session[:echa]}/)
+  end
+  haml :feature
+end
+
+post '/models/from_validation' do # create a new model from existing validation
+  if params[:validation_uri] and params[:name] and params[:endpoint]
+    @model = ToxCreateModel.create(:name => params[:name], :subjectid => @subjectid)
+    @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
+    LOGGER.debug "dv --------- #{@model.id}" 
+    task = OpenTox::Task.create("Lazar Toxicity Predictions Task - Collection data from validation and creating lazar model",url_for("/models",:full)) do |task|
+      task.progress(5)
+      if (params[:validation_uri].include? "crossvalidation")
+        begin
+          v = OpenTox::Validation::Crossvalidation.find(params[:validation_uri])
+          v_report = v.find_or_create_report(@subjectid)
+          validation = v.statistics(@subjectid)
+          task.progress(10)
+        rescue => e
+          error "No valide validatin report found.", e
+        end
+        begin
+          @dataset = OpenTox::Dataset.find(v.metadata[OT::dataset])
+          v_algo_params = v.metadata[OT::algorithmParams].split(";")
+          algo_params = {}
+          v_algo_params.each do |param|
+            algo_params[param.split("=").first] = param.split("=").last
+          end
+          LOGGER.debug "dv ---------- #{algo_params.to_yaml}"
+          algo_params["dataset_uri"] = @dataset.uri
+          algo_params["prediction_feature"] = v.metadata[OT::predictionFeature]
+          algo_params["subjectid"] = @subjectid
+          LOGGER.debug "dv ---------- #{algo_params.to_yaml}"
+          lazar = OpenTox::Model::Lazar.create( algo_params, OpenTox::SubTask.new(task,15,25))
+        rescue => e
+          error "Model creation failed",e 
+        end 
+  
+      else
+        begin
+          v = OpenTox::Validation.find(params[:validation_uri])
+          v_report = v.find_or_create_report(@subjectid)
+          validation = OpenTox::Validation.find(params[:validation_uri])
+          lazar = OpenTox::Model::Lazar.find(v.metadata[OT::model])
+          @dataset = OpenTox::Dataset.find(v.metadata[OT::trainingDataset])
+          task.progress(25)
+        rescue => e
+          error "No valide validatin report found.", e
+        end
+        #@model.update :model =>  v.metadata[OT::model]
+      end
+      
+      @model.update :status => "Updating model"
+      @model.update :training_dataset => @dataset.uri, :nr_compounds => @dataset.compounds.size
+      @model.update :endpoint => params[:endpoint] 
+#      @model.update :endpoint_uri => params[:endpoint] 
+      @prediction_feature = OpenTox::Feature.find(v.metadata[OT::predictionFeature])
+
+      @model.update :type => @prediction_feature.feature_type, :feature_dataset => lazar.metadata[OT.featureDataset], :uri => lazar.uri
+      @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings] and @dataset.metadata[OT.Warnings].empty? 
+      @model.update(:validation_uri => v.uri)
+      task.progress(50)
+
+      # create summary
+      
+      @model.update(:nr_predictions => validation.metadata[OT.numInstances].to_i - validation.metadata[OT.numUnpredicted].to_i)
+      if validation.metadata[OT.classificationStatistics]
+        @model.update(:correct_predictions => validation.metadata[OT.classificationStatistics][OT.percentCorrect].to_f)
+        @model.update(:confusion_matrix => validation.confusion_matrix.to_yaml)
+        @model.update(:average_area_under_roc => validation.metadata[OT.classificationStatistics][OT.averageAreaUnderRoc].to_f)
+        validation.metadata[OT.classificationStatistics][OT.classValueStatistics].each do |m|
+          if m[OT.classValue] =~ TRUE_REGEXP
+            #HACK: estimate true feature value correctly 
+            @model.update(:sensitivity => m[OT.truePositiveRate])
+            @model.update(:specificity => m[OT.trueNegativeRate])
+            break
+          end
+        end
+      else
+        @model.update(:r_square => validation.metadata[OT.regressionStatistics][OT.rSquare].to_f)
+        @model.update(:root_mean_squared_error => validation.metadata[OT.regressionStatistics][OT.rootMeanSquaredError].to_f)
+        @model.update(:mean_absolute_error => validation.metadata[OT.regressionStatistics][OT.meanAbsoluteError].to_f)
+      end
+      task.progress(80)
+
+      begin
+        @model.update :status => "Creating validation report"
+        validation_report_uri = v.find_or_create_report(@subjectid, OpenTox::SubTask.new(task,80,90))
+        @model.update :validation_report_uri => validation_report_uri
+      rescue => e
+        error "Model report creation failed",e
+      end
+      
+      task.progress(99)
+      @model.update(:status => "Completed")
+    end
+  else
+    return "No validation and/or name and/or endpoint given." 
+    flash[:notice] = "Creating lazar model from validation failed."
+    redirect url_for('/models')
+  end
+end
+  
+post '/models' do # create a new model
+  unless is_aluist
+    flash[:notice] = "You do not have the permission to create a new model."
+    redirect url_for('/models')
+  end
+  unless (params[:dataset] and params[:prediction_feature]) or (params[:endpoint] and params[:file] and params[:file][:tempfile]) #params[:endpoint] and 
+    flash[:notice] = "Please upload a Excel or CSV file and select an endpoint or select an AMBIT dataset."
+    redirect url_for('/create')
+  end
+
+  unless logged_in()
+    logout
+    flash[:notice] = "Please login to create a new model."
+    redirect url_for('/create')
+  end
+
+  if params[:dataset] and params[:prediction_feature]
+    @dataset = OpenTox::Dataset.new(params[:dataset], @subjectid)
+    name = @dataset.load_metadata[DC.title]
+    @prediction_feature = OpenTox::Feature.find params[:prediction_feature], @subjectid
+    @dataset.load_compounds
+  elsif params[:file][:filename]
+    name = params[:file][:filename].sub(/\..*$/,"")
+  end
+
+  @model = ToxCreateModel.create(:name => name, :subjectid => @subjectid)
+  @model.update :web_uri => url_for("/model/#{@model.id}", :full), :warnings => ""
+  task = OpenTox::Task.create("Toxcreate Task - Uploading dataset and creating lazar model",url_for("/models",:full)) do |task|
+
+    task.progress(5)
+    @model.update :status => "Uploading and saving dataset", :task_uri => task.uri
+
+    unless params[:dataset] and params[:prediction_feature]
+      begin
+        @dataset = OpenTox::Dataset.create(nil, @subjectid)
+        # check format by extension - not all browsers provide correct content-type]) 
+        case File.extname(params[:file][:filename])
+        when ".csv"
+          csv = params[:file][:tempfile].read
+          @dataset.load_csv(csv, @subjectid)
+        when ".xls", ".xlsx"
+          excel_file = params[:file][:tempfile].path + File.extname(params[:file][:filename])
+          File.rename(params[:file][:tempfile].path, excel_file) # add extension, spreadsheet does not read files without extensions
+          @dataset.load_spreadsheet(Excel.new excel_file, @subjectid)
+          if @dataset.metadata[OT.Errors]
+            raise "Incorrect file format. Please follow the instructions for #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} formats."
+          end
+        when ".sdf"
+          sdf = params[:file][:tempfile].read
+          @dataset.load_sdf(sdf, @subjectid)
+        else
+          raise "#{params[:file][:filename]} has an unsupported file type."
+        end
+        @dataset.features[@dataset.features.keys.first][OWL.sameAs] = params[:endpoint].split(',').first if params[:endpoint]
+        @model.update :endpoint_uri => params[:endpoint].split(',').first, :endpoint => params[:endpoint].split(',')[1..99].to_s.gsub(/^"(.*?)"$/,'\1') if params[:endpoint]
+        @dataset.save(@subjectid)
+      rescue => e
+        error "Dataset creation failed '#{e.message}'",e
+      end
+      if @dataset.features.keys.size != 1
+        error "More than one feature in dataset #{params[:file][:filename]}. Please delete irrelvant columns and try again."
+      else
+        @prediction_feature = OpenTox::Feature.find(@dataset.features.keys.first,@subjectid)
+      end
+    #else
+      # test when external dataset is enabled: 
+      #if @dataset.features[@dataset.features.keys.first][OWL.sameAs] 
+      #  @model.update :endpoint_uri => @dataset.features[@dataset.features.keys.first][OWL.sameAs], :endpoint => OpenTox::Ontology::Echa.get_endpoint_name(@dataset.features[@dataset.features.keys.first][OWL.sameAs]) 
+      #end
+    end
+    task.progress(10)
+    if @dataset.compounds.size < 10
+      error "Too few compounds to create a prediction model. Did you provide compounds in SMILES format and classification activities as described in the #{link_to "instructions", "/help"}? As a rule of thumb you will need at least 100 training compounds for nongeneric datasets. A lower number could be sufficient for congeneric datasets."
+    end
+    @model.update :training_dataset => @dataset.uri, :nr_compounds => @dataset.compounds.size, :status => "Creating prediction model"
+    @model.update :warnings => @dataset.metadata[OT.Warnings] unless @dataset.metadata[OT.Warnings] and @dataset.metadata[OT.Warnings].empty?
+    task.progress(15)
+    begin
+      lazar = OpenTox::Model::Lazar.create( {:dataset_uri => @dataset.uri, :prediction_feature => @prediction_feature.uri, :subjectid => @subjectid}, 
+        OpenTox::SubTask.new(task,15,25))
+    rescue => e
+      error "Model creation failed",e # Please check if the input file is in a valid #{link_to "Excel", "/help"} or #{link_to "CSV", "/help"} format."
+    end
+=begin
+    type = "unknown"
+    if lazar.metadata[RDF.type].grep(/Classification/)
+      type = "classification"
+    elsif lazar.metadata[RDF.type].grep(/Regression/)
+      type = "regression"
+    end
+=end
+    @model.update :type => @prediction_feature.feature_type, :feature_dataset => lazar.metadata[OT.featureDataset], :uri => lazar.uri
+
+    if CONFIG[:services]["opentox-validation"]
+      @model.update :status => "Validating model"
+      begin
+        crossvalidation = OpenTox::Crossvalidation.create( {
+            :algorithm_uri => lazar.metadata[OT.algorithm],
+            :dataset_uri => lazar.parameter("dataset_uri"),
+            :subjectid => @subjectid,
+            :prediction_feature => lazar.parameter("prediction_feature"),
+            :algorithm_params => "feature_generation_uri=#{lazar.parameter("feature_generation_uri")}" },
+            nil, OpenTox::SubTask.new(task,25,80))
+
+        @model.update(:validation_uri => crossvalidation.uri)
+        LOGGER.debug "Validation URI: #{@model.validation_uri}"
+
+        # create summary
+        validation = crossvalidation.statistics(@subjectid)
+        @model.update(:nr_predictions => validation.metadata[OT.numInstances].to_i - validation.metadata[OT.numUnpredicted].to_i)
+        if validation.metadata[OT.classificationStatistics]
+          @model.update(:correct_predictions => validation.metadata[OT.classificationStatistics][OT.percentCorrect].to_f)
+          @model.update(:confusion_matrix => validation.confusion_matrix.to_yaml)
+          @model.update(:average_area_under_roc => validation.metadata[OT.classificationStatistics][OT.averageAreaUnderRoc].to_f)
+          validation.metadata[OT.classificationStatistics][OT.classValueStatistics].each do |m|
+            if m[OT.classValue] =~ TRUE_REGEXP
+              #HACK: estimate true feature value correctly 
+              @model.update(:sensitivity => m[OT.truePositiveRate])
+              @model.update(:specificity => m[OT.trueNegativeRate])
+              break
+            end
+          end
+        else
+          @model.update(:r_square => validation.metadata[OT.regressionStatistics][OT.rSquare].to_f)
+          @model.update(:root_mean_squared_error => validation.metadata[OT.regressionStatistics][OT.rootMeanSquaredError].to_f)
+          @model.update(:mean_absolute_error => validation.metadata[OT.regressionStatistics][OT.meanAbsoluteError].to_f)
+        end
+      rescue => e
+        @model.update :warnings => @model.warnings.to_s+"\nModel crossvalidation failed with #{e.message}."
+        error "Model validation failed",e
+      end
+    
+      begin
+        @model.update :status => "Creating validation report"
+        validation_report_uri = crossvalidation.find_or_create_report(@subjectid, OpenTox::SubTask.new(task,80,90)) #unless @model.dirty?
+        @model.update :validation_report_uri => validation_report_uri, :status => "Creating QMRF report"
+        qmrf_report = OpenTox::Crossvalidation::QMRFReport.create(@model.uri, @subjectid, OpenTox::SubTask.new(task,90,99))
+        @model.update(:validation_qmrf_uri => qmrf_report.uri, :status => "Completed")
+      rescue => e
+        error "Model report creation failed",e
+      end
+    else
+      @model.update(:status => "Completed") #, :warnings => @model.warnings + "\nValidation service cannot be accessed from localhost.")
+      task.progress(99)
+    end
+    lazar.uri
+  end
+  @model.update :task_uri => task.uri
+  sleep 0.25 # power nap: ohm sometimes returns nil values for model.status or for model itself
+  flash[:notice] = "Model creation and validation started - this may last up to several hours depending on the number and size of the training compounds."
+  redirect url_for('/models')
+
+end
+
+post '/predict/?' do # post chemical name to model
+  
+  @identifier = params[:identifier]
+  unless params[:selection] and params[:identifier] != ''
+    flash[:notice] = "Please enter a compound identifier and select an endpoint from the list."
+    redirect url_for('/predict')
+  end
+  begin
+    @compound = OpenTox::Compound.from_smiles(params[:identifier])
+  rescue
+    flash[:notice] = "Could not find a structure for '#{@identifier}'. Please try again."
+    redirect url_for('/predict')
+  end
+  @predictions = []
+  params[:selection].keys.each do |id|
+    model = ToxCreateModel.get(id.to_i)
+    prediction = nil
+    confidence = nil
+    title = nil
+    db_activities = []
+    lazar = OpenTox::Model::Lazar.find model.uri, @subjectid
+    prediction_dataset_uri = lazar.run({:compound_uri => @compound.uri, :subjectid => @subjectid})
+    LOGGER.debug "Prediction dataset_uri: #{prediction_dataset_uri}"
+    if lazar.value_map
+      @value_map = lazar.value_map
+    else
+      @value_map = nil
+    end
+    LOGGER.debug "dv ----- "
+
+    prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri, @subjectid)
+    if prediction_dataset.metadata[OT.hasSource].match(/dataset/)
+      LOGGER.debug "dv ----- #{prediction_dataset.measured_activities(@compound).to_yaml}"
+      LOGGER.debug "dv ----- #{prediction_dataset.measured_activities(@compound).class}"
+      if model.name.downcase.include? "ptd50"
+        ds = OpenTox::Dataset.new()
+        ds.save(@subjectid)
+        ds.add_compound(@compound.uri)
+        ds.save(@subjectid)
+        mw_algorithm_uri = File.join(CONFIG[:services]["opentox-algorithm"],"pc/MW")
+        mw_uri = OpenTox::RestClientWrapper.post(mw_algorithm_uri, {:dataset_uri=>ds.uri})
+        ds.delete(@subjectid)
+        mw_ds = OpenTox::Dataset.find(mw_uri, @subjectid)
+        mw = mw_ds.data_entries[@compound.uri][mw_uri.to_s + "/feature/MW"].first
+        mw_ds.delete(@subjectid)
+	td50 = (((10**(-1.0*prediction_dataset.measured_activities(@compound).first.to_f))*(mw.to_f*1000))*1000).round / 1000.0
+        prediction_trans = "TD50: #{td50}"
+      elsif model.name.downcase.include? "loael"
+        if model.name.downcase.include? "mol"
+          ds = OpenTox::Dataset.new()
+          ds.save(@subjectid)
+          ds.add_compound(@compound.uri)
+          ds.save(@subjectid)
+          mw_algorithm_uri = File.join(CONFIG[:services]["opentox-algorithm"],"pc/MW")
+          mw_uri = OpenTox::RestClientWrapper.post(mw_algorithm_uri, {:dataset_uri=>ds.uri})
+          ds.delete(@subjectid)
+          mw_ds = OpenTox::Dataset.find(mw_uri, @subjectid)
+          mw = mw_ds.data_entries[@compound.uri][mw_uri.to_s + "/feature/MW"].first
+          mw_ds.delete(@subjectid)
+          mg = (((10**(-1.0*prediction_dataset.measured_activities(@compound).first.to_f))*(mw.to_f*1000))*1000).round / 1000.0
+          prediction_trans = "mg/kg bw/day: #{mg}"
+        elsif model.name.downcase.include? "mg" 
+          mg = ((10**prediction_dataset.measured_activities(@compound).first.to_f)*1000).round / 1000.0
+          prediction_trans = "mg/kg bw/day: #{mg}"
+        end
+      end
+      if prediction_trans.nil?
+        @predictions << {
+        :title => model.name,
+        :measured_activities => prediction_dataset.measured_activities(@compound)
+      	}
+      else
+        @predictions << {
+          :title => model.name,
+          :measured_activities => prediction_dataset.measured_activities(@compoundo),
+          :prediction_transformed => prediction_trans
+        }
+      end
+    else
+      predicted_feature = prediction_dataset.metadata[OT.dependentVariables]
+      prediction = OpenTox::Feature.find(predicted_feature, @subjectid)
+      if prediction.metadata[OT.error]
+        @predictions << {
+          :title => model.name,
+          :error => prediction.metadata[OT.error]
+          }
+      elsif prediction_dataset.value(@compound).nil?
+        @predictions << {
+          :title => model.name,
+          :error => "Not enough similar compounds in training dataset."
+          }
+      else
+        if model.name.downcase.include? "ptd50"
+          ds = OpenTox::Dataset.new()
+          ds.save(@subjectid)
+          ds.add_compound(@compound.uri)
+          ds.save(@subjectid)
+          mw_algorithm_uri = File.join(CONFIG[:services]["opentox-algorithm"],"pc/MW")
+          mw_uri = OpenTox::RestClientWrapper.post(mw_algorithm_uri, {:dataset_uri=>ds.uri})
+          ds.delete(@subjectid)
+          mw_ds = OpenTox::Dataset.find(mw_uri, @subjectid)
+          mw = mw_ds.data_entries[@compound.uri][mw_uri.to_s + "/feature/MW"].first
+          mw_ds.delete(@subjectid)
+          td50 = (((10**(-1.0*prediction_dataset.value(@compound)))*(mw.to_f*1000))*1000).round / 1000.0
+          prediction_trans = "TD50: #{td50}"
+        elsif model.name.downcase.include? "loael"
+          if model.name.downcase.include? "mol"
+            ds = OpenTox::Dataset.new()
+            ds.save(@subjectid)
+            ds.add_compound(@compound.uri)
+            ds.save(@subjectid)
+            mw_algorithm_uri = File.join(CONFIG[:services]["opentox-algorithm"],"pc/MW")
+            mw_uri = OpenTox::RestClientWrapper.post(mw_algorithm_uri, {:dataset_uri=>ds.uri})
+            ds.delete(@subjectid)
+            mw_ds = OpenTox::Dataset.find(mw_uri, @subjectid)
+            mw = mw_ds.data_entries[@compound.uri][mw_uri.to_s + "/feature/MW"].first
+            mw_ds.delete(@subjectid)
+            mg = (((10**(-1.0*prediction_dataset.value(@compound)))*(mw.to_f*1000))*1000).round / 1000.0
+            prediction_trans = "mg/kg bw/day: #{mg}"
+          elsif model.name.downcase.include? "mg" 
+            mg = ((10**prediction_dataset.value(@compound))*1000).round / 1000.0
+            prediction_trans = "mg/kg bw/day: #{mg}"
+          end
+        end
+        if prediction_trans.nil? 
+          @predictions << {
+            :title => model.name,
+            :model_uri => model.uri,
+            :prediction => prediction_dataset.value(@compound),
+            :confidence => prediction_dataset.confidence(@compound)
+            }
+        else
+          @predictions << {
+            :title => model.name,
+            :model_uri => model.uri,
+            :prediction => prediction_dataset.value(@compound),
+            :confidence => prediction_dataset.confidence(@compound),
+            :prediction_transformed => prediction_trans
+            }
+        end
+      end
+    end
+    # TODO failed/unavailable predictions
+  end
+
+  haml :prediction
+end
+
+post "/lazar/?" do # get detailed prediction
+  @page = 0
+  @page = params[:page].to_i if params[:page]
+  @model_uri = params[:model_uri]
+  lazar = OpenTox::Model::Lazar.find @model_uri, @subjectid
+  prediction_dataset_uri = lazar.run(:compound_uri => params[:compound_uri], :subjectid => @subjectid)
+  if lazar.value_map
+    @value_map = lazar.value_map
+  else
+    @value_map = nil
+  end
+  @prediction = OpenTox::LazarPrediction.find(prediction_dataset_uri, @subjectid)
+  @compound = OpenTox::Compound.new(params[:compound_uri])
+  haml :lazar
+end
+
+post '/login' do
+  if params[:username] == '' || params[:password] == ''
+    flash[:notice] = "Please enter username and password."
+    redirect url_for('/login')
+  end
+  if login(params[:username], params[:password])
+    flash[:notice] = "Welcome #{session[:username]}!"
+    redirect url_for('/create')
+  else
+    flash[:notice] = "Login failed. Please try again."
+    haml :login
+  end
+end
+
+post '/logout' do
+  logout
+  redirect url_for('/login')
+end
+
+delete '/model/:id/?' do
+  model = ToxCreateModel.get(params[:id])
+  raise OpenTox::NotFoundError.new("Model with id: #{params[:id]} not found!") unless model
+  begin
+    delete_model(model, @subjectid)
+    flash[:notice] = "#{model.name} model deleted."
+  rescue
+    LOGGER.error "#{model.name} model delete error."
+    flash[:notice] = "#{model.name} model delete error."
+  end
+  redirect url_for('/models')
+end
+
+delete '/?' do
+  ToxCreateModel.all.each do |model| 
+    begin
+      delete_model(model, @subjectid)   
+      model.delete
+      unless ToxCreateModel.get(params[:id])
+        begin
+          aa = OpenTox::Authorization.delete_policies_from_uri(model.web_uri, @subjectid)
+          LOGGER.debug "Policy deleted for Dataset URI: #{uri} with result: #{aa}"
+        rescue
+          LOGGER.warn "Policy delete error for Dataset URI: #{uri}"
+        end
+      end
+      LOGGER.debug "#{model.name} model deleted."
+    rescue
+      LOGGER.error "#{model.name} model delete error."
+    end
+  end
+  response['Content-Type'] = 'text/plain'
+  "All Models deleted."
+end
+
+# SASS stylesheet
+get '/stylesheets/style.css' do
+  headers 'Content-Type' => 'text/css; charset=utf-8'
+  sass :style
+end

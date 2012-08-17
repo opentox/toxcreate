@@ -1,0 +1,55 @@
+%p
+  = link_to "New prediction", "/predict"
+.predictions
+  %table
+    %tr
+      %th{:colspan => @predictions.size+1}
+        = @identifier
+    %tr
+      %td
+        %img{:src => @compound.to_image_uri.split("8080").last, :alt => @compound.to_smiles}
+      - @predictions.each do |p|
+        - LOGGER.debug p.to_yaml
+        %td
+          %b
+            = p[:title] + ":"
+          - if p[:measured_activities]
+            %br
+            - p[:measured_activities].each do |a|
+              = activity_markup(a, @value_map)
+              if p[:prediction_transformed]
+              = p[:prediction_transformed]
+            %br
+              (
+              %a{:href => "#", :id => "linkTrainingData#{p.object_id}"} Measured activity
+              :javascript
+                $("a#linkTrainingData#{p.object_id}").click(function () {
+                  $("dl#training_data").toggle();  
+                });
+              )
+
+          - elsif p[:error]
+            %br= p[:error]
+          - else
+            = activity_markup(p[:prediction], @value_map)
+            - if p[:prediction_transformed]
+              = p[:prediction_transformed]
+            - if p[:confidence]
+              %br
+                (
+                %a{:href => "#", :id => "linkConfidence#{p.object_id}"} Confidence
+                = ": #{sprintf('%.03g', p[:confidence].to_f.abs)}"
+                :javascript
+                  $("a#linkConfidence#{p.object_id}").click(function () {
+                    $("dl#confidence").toggle();  
+                  });
+                )
+            %br
+              %form{:name => "form", :action => url_for('/lazar'), :method => "post", :enctype => "multipart/form-data" }
+                %input{:type => :hidden, :name => :compound_uri, :value => @compound.uri}
+                %input{:type => :hidden, :name => :model_uri, :value => p[:model_uri]}
+                %input{:type => :hidden, :name => :subjectid, :value => session[:subjectid]}
+                %input{ :type => "submit", :value => "Details"}
+
+= haml :confidence, :layout => false
+= haml :training_data, :layout => false
