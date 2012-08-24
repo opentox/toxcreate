@@ -527,12 +527,35 @@ post '/predict/?' do # post chemical name to model
     else
       @value_map = nil
     end
+
     prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri, @subjectid)
     if prediction_dataset.metadata[OT.hasSource].match(/dataset/)
-      @predictions << {
-        :title => model.name,
-        :measured_activities => prediction_dataset.measured_activities(@compound)
-      }
+      if model.name.downcase.include? "ptd50"
+        mw = calc_mw(@compound.uri)
+	td50 = ptd50_to_td50(prediction_dataset.measured_activities(@compound).first.to_f, mw)
+	prediction_trans = "TD50: #{td50}"
+      elsif model.name.downcase.include? "loael"
+        if model.name.downcase.include? "mol"
+          mw = calc_mw(@compound.uri)
+          mg = logmmol_to_mg(prediction_dataset.measured_activities(@compound).first.to_f, mw)
+          prediction_trans = "mg/kg bw/day: #{mg}"
+        elsif model.name.downcase.include? "mg"
+          mg = logmg_to_mg(prediction_dataset.measured_activities(@compound).first.to_f)
+          prediction_trans = "mg/kg bw/day: #{mg}"
+        end
+      end
+      if prediction_trans.nil?
+        @predictions << {
+          :title => model.name,
+          :measured_activities => prediction_dataset.measured_activities(@compound)
+      	}
+      else
+        @predictions << {
+          :title => model.name,
+          :measured_activities => prediction_dataset.measured_activities(@compound),
+          :prediction_transformed => prediction_trans
+        }
+      end
     else
       predicted_feature = prediction_dataset.metadata[OT.dependentVariables]
       prediction = OpenTox::Feature.find(predicted_feature, @subjectid)
@@ -540,42 +563,24 @@ post '/predict/?' do # post chemical name to model
         @predictions << {
           :title => model.name,
           :error => prediction.metadata[OT.error]
-          }
+        }
       elsif prediction_dataset.value(@compound).nil?
         @predictions << {
           :title => model.name,
           :error => "Not enough similar compounds in training dataset."
-          }
+        }
       else
         if model.name.downcase.include? "ptd50"
-          ds = OpenTox::Dataset.new()
-          ds.save(@subjectid)
-          ds.add_compound(@compound.uri)
-          ds.save(@subjectid)
-          mw_algorithm_uri = File.join(CONFIG[:services]["opentox-algorithm"],"pc/MW")
-          mw_uri = OpenTox::RestClientWrapper.post(mw_algorithm_uri, {:dataset_uri=>ds.uri})
-          ds.delete(@subjectid)
-          mw_ds = OpenTox::Dataset.find(mw_uri, @subjectid)
-          mw = mw_ds.data_entries[@compound.uri][mw_uri.to_s + "/feature/MW"].first
-          mw_ds.delete(@subjectid)
-          td50 = (((10**(-1.0*prediction_dataset.value(@compound)))*(mw.to_f*1000))*1000).round / 1000.0
+          mw = calc_mw(@compound.uri)
+          td50 = ptd50_to_td50(prediction_dataset.value(@compound), mw)
           prediction_trans = "TD50: #{td50}"
         elsif model.name.downcase.include? "loael"
           if model.name.downcase.include? "mol"
-            ds = OpenTox::Dataset.new()
-            ds.save(@subjectid)
-            ds.add_compound(@compound.uri)
-            ds.save(@subjectid)
-            mw_algorithm_uri = File.join(CONFIG[:services]["opentox-algorithm"],"pc/MW")
-            mw_uri = OpenTox::RestClientWrapper.post(mw_algorithm_uri, {:dataset_uri=>ds.uri})
-            ds.delete(@subjectid)
-            mw_ds = OpenTox::Dataset.find(mw_uri, @subjectid)
-            mw = mw_ds.data_entries[@compound.uri][mw_uri.to_s + "/feature/MW"].first
-            mw_ds.delete(@subjectid)
-            mg = (((10**(-1.0*prediction_dataset.value(@compound)))*(mw.to_f*1000))*1000).round / 1000.0
+            mw = calc_mw(@compound.uri)
+            mg = logmmol_to_mg(prediction_dataset.value(@compound), mw)
             prediction_trans = "mg/kg bw/day: #{mg}"
           elsif model.name.downcase.include? "mg" 
-            mg = ((10**prediction_dataset.value(@compound))*1000).round / 1000.0
+            mg = logmg_to_mg(prediction_dataset.value(@compound))
             prediction_trans = "mg/kg bw/day: #{mg}"
           end
         end
@@ -585,7 +590,7 @@ post '/predict/?' do # post chemical name to model
             :model_uri => model.uri,
             :prediction => prediction_dataset.value(@compound),
             :confidence => prediction_dataset.confidence(@compound)
-            }
+          }
         else
           @predictions << {
             :title => model.name,
@@ -593,7 +598,7 @@ post '/predict/?' do # post chemical name to model
             :prediction => prediction_dataset.value(@compound),
             :confidence => prediction_dataset.confidence(@compound),
             :prediction_transformed => prediction_trans
-            }
+          }
         end
       end
     end

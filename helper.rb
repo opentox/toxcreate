@@ -158,4 +158,38 @@ helpers do
     return out
   end
 
+  def logmmol_to_mg(value ,mw)
+    mg = round_to((10**(-1.0*round_to(value.to_f, 2))*(mw.to_f*1000)),4)
+    return mg
+  end
+
+  def logmg_to_mg(value)
+    mg = round_to(10**round_to(value.to_f, 2),4)
+    return mg
+  end
+
+  def ptd50_to_td50(value ,mw)
+    td50 = round_to((10**(-1.0*round_to(value.to_f, 2))*(mw.to_f*1000)),4)
+    return td50   
+  end
+
+  def round_to(value, deci)
+    rounded = (value.to_f*(10**deci)).round / (10**deci).to_f
+    return rounded
+  end
+
+  def calc_mw(compound_uri)
+    ds = OpenTox::Dataset.new()
+    ds.save(@subjectid)
+    ds.add_compound(compound_uri)
+    ds.save(@subjectid)
+    mw_algorithm_uri = File.join(CONFIG[:services]["opentox-algorithm"],"pc/MW")
+    mw_uri = OpenTox::RestClientWrapper.post(mw_algorithm_uri, {:dataset_uri=>ds.uri})
+    ds.delete(@subjectid)
+    mw_ds = OpenTox::Dataset.find(mw_uri, @subjectid)
+    mw = mw_ds.data_entries[compound_uri][mw_uri.to_s + "/feature/MW"].first.to_f
+    mw_ds.delete(@subjectid)
+    return mw 
+  end
+
 end
