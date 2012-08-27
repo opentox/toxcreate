@@ -20,7 +20,7 @@
 
       %tr
         %td.image= compound_image(@compound,@prediction.descriptors(@compound),@value_map)
-        %td= activity_markup(@prediction.value(@compound), @value_map)
+        %td= {activity_markup(@prediction.value(@compound), @value_map), transform(@prediction.value(@compound), @compound.uri, @prediction.title, true)}
         %td= sprintf('%.03g', @prediction.confidence(@compound)) 
         %td
           %ul

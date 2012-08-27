@@ -192,4 +192,27 @@ helpers do
     return mw 
   end
 
+  def transform(value, compound_uri, name, haml)
+    prediction_trans = nil
+    model_name = name.to_s.downcase
+    if model_name.include? "ptd50"
+      mw = calc_mw(compound_uri)
+      td50 = ptd50_to_td50(value, mw)
+      prediction_trans = "TD50: #{td50}"
+    elsif model_name.include? "loael"
+      if model_name.include? "mol"
+        mw = calc_mw(compound_uri)
+        mg = logmmol_to_mg(value, mw)
+        prediction_trans = "mg/kg bw/day: #{mg}"
+      elsif model_name.include? "mg"
+        mg = logmg_to_mg(value)
+        prediction_trans = "mg/kg bw/day: #{mg}"
+      end
+    end
+    if haml == true
+      haml ".other #{prediction_trans.to_s}", :layout => false
+    else
+      return prediction_trans
+    end
+  end
 end

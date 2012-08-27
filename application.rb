@@ -530,20 +530,7 @@ post '/predict/?' do # post chemical name to model
 
     prediction_dataset = OpenTox::LazarPrediction.find(prediction_dataset_uri, @subjectid)
     if prediction_dataset.metadata[OT.hasSource].match(/dataset/)
-      if model.name.downcase.include? "ptd50"
-        mw = calc_mw(@compound.uri)
-	td50 = ptd50_to_td50(prediction_dataset.measured_activities(@compound).first.to_f, mw)
-	prediction_trans = "TD50: #{td50}"
-      elsif model.name.downcase.include? "loael"
-        if model.name.downcase.include? "mol"
-          mw = calc_mw(@compound.uri)
-          mg = logmmol_to_mg(prediction_dataset.measured_activities(@compound).first.to_f, mw)
-          prediction_trans = "mg/kg bw/day: #{mg}"
-        elsif model.name.downcase.include? "mg"
-          mg = logmg_to_mg(prediction_dataset.measured_activities(@compound).first.to_f)
-          prediction_trans = "mg/kg bw/day: #{mg}"
-        end
-      end
+      prediction_trans = transform(prediction_dataset.measured_activities(@compound).first.to_f, @compound.uri, model.name.downcase, false)
       if prediction_trans.nil?
         @predictions << {
           :title => model.name,
@@ -552,8 +539,7 @@ post '/predict/?' do # post chemical name to model
       else
         @predictions << {
           :title => model.name,
-          :measured_activities => prediction_dataset.measured_activities(@compound),
-          :prediction_transformed => prediction_trans
+          :measured_activities => "#{round_to(prediction_dataset.measured_activities(@compound).first, 4)}, \n#{prediction_trans}"
         }
       end
     else
@@ -570,20 +556,7 @@ post '/predict/?' do # post chemical name to model
           :error => "Not enough similar compounds in training dataset."
         }
       else
-        if model.name.downcase.include? "ptd50"
-          mw = calc_mw(@compound.uri)
-          td50 = ptd50_to_td50(prediction_dataset.value(@compound), mw)
-          prediction_trans = "TD50: #{td50}"
-        elsif model.name.downcase.include? "loael"
-          if model.name.downcase.include? "mol"
-            mw = calc_mw(@compound.uri)
-            mg = logmmol_to_mg(prediction_dataset.value(@compound), mw)
-            prediction_trans = "mg/kg bw/day: #{mg}"
-          elsif model.name.downcase.include? "mg" 
-            mg = logmg_to_mg(prediction_dataset.value(@compound))
-            prediction_trans = "mg/kg bw/day: #{mg}"
-          end
-        end
+        prediction_trans = transform(prediction_dataset.value(@compound), @compound.uri, model.name.downcase, false)
         if prediction_trans.nil? 
           @predictions << {
             :title => model.name,
@@ -595,9 +568,8 @@ post '/predict/?' do # post chemical name to model
           @predictions << {
             :title => model.name,
             :model_uri => model.uri,
-            :prediction => prediction_dataset.value(@compound),
-            :confidence => prediction_dataset.confidence(@compound),
-            :prediction_transformed => prediction_trans
+            :prediction => "#{round_to(prediction_dataset.value(@compound), 4)}, \n#{prediction_trans}",
+            :confidence => prediction_dataset.confidence(@compound)
           }
         end
       end
